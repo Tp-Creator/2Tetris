@@ -1,0 +1,53 @@
+tetris 2
+
+	Cool main screen med animerat tetris i backgrunden
+
+	Påse med bitar
+
+	Inställningar
+		map size
+		map dimentions
+		rotation and movment speeds
+		(new shapes?)
+		
+		default settings
+		
+	([space] för att direkt lägga ned bitar (1 player))
+
+	2 players
+		Different modes
+			vs
+			teamplay
+
+
+////////////////////
+
+Flytta ut NextFall = {} till global (eftersom: Gäller alla bitar)
+
+
+Loop för alla bitar att falla när nextFall är
+
+
+
+figures = []
+
+
+
+updateFigures() {
+
+	for figures {
+		figures[i].update()
+	}
+
+	for figures {
+		om någon fall.done == true
+			figures[i] = newFigure()
+	}
+}
+
+ngt med figures[i].update() som inte fungerar. Ritar inte ut biten och avslutar matchen direkt
+
+figures[0].x är undefined
+
+
+/// --->
