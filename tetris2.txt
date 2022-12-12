@@ -51,3 +51,33 @@ figures[0].x är undefined
 
 
 /// --->
+
+
+Skapa upp map beroende på antal spelare
+
+ha en array med olika mappar
+
+varje player har:
+	id (ex. 1, 2, 3)
+
+	current-figure
+
+	map
+		pos: x, y
+		koordinautsystem för bitarna
+
+	points & level &   fall speed (baseras på de/den andra spelarens level)
+
+allPlayers = [
+				[amount-of-players]
+				[player1] = {figure: ["", "", "x", "x"], map}
+				[player2] = {}
+				[player3] = {}
+			 ]
+(Fungerar kanske inte så bra för team mode)
+
+Gamemodes:
+	oberoende (1, 2?)
+	vs: (1, 2, 3)
+	Co-op (1, 2, 3)
+	vs 2-2?
