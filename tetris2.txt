@@ -50,7 +50,7 @@ ngt med figures[i].update() som inte fungerar. Ritar inte ut biten och avslutar 
 figures[0].x är undefined
 
 
-/// --->
+
 
 
 Skapa upp map beroende på antal spelare
@@ -145,3 +145,22 @@ spaceLeft/howMany+1 = spaceBetween
 posX1 = spaceBetween
 
 posX2 = spaceBetween * 2 + mapWidth+scoreBoardWidth
+
+
+
+Gör så att olika spelare får olika tangenter att trycka på för att styra
+
+	this.keys = {}
+	this.keys.left = 65
+
+	keyboard[this.keys.left]
+
+/// --->
+
+implementera keys grejen så att man får olika keys på olika players
+
+Fixa så att fallspeeden blir ökad med antalet levlar
+
+fixa gameover
+
+fixa de andra gamemodesen

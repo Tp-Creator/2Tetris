@@ -35,7 +35,7 @@
 
 
 
-    settings = {gamemode: 0, playerCount: 3, mapW: 10, mapH: 20, pixelS: 30}
+    settings = {gamemode: 0, playerCount: 1, mapW: 10, mapH: 20, pixelS: 30}
     
     //  Antalspelare
     
@@ -276,7 +276,7 @@
     */
     //  -----------------------------------------------------------------------------
 
-    function Figure(shape, spawnMap=0){                                         //  argumentet shape är en av figurerna som finns i arrayen allShapes
+    function Figure(shape, spawnMap=0, keys){                                         //  argumentet shape är en av figurerna som finns i arrayen allShapes
         this.map = spawnMap                                              //  Int for what map the shape should be rendered in
         this.color = shape[shape.length-1].c                        //  Sparar ned figurens specifika färg
         this.shape = shape.slice(0, -1)                             //  Sparar ned shapen i objektet (och struntar i färgen (därav splice(0, -1) som tar alla element utom det sista)), så att den blir global innom objektet.
@@ -292,6 +292,13 @@
         this.keyDownTime = {a: 0, s: 0, w: 0, d: 0}                 //  Detta är cooldown variabler för förflyttning och rotation, så att de inte roterar eller förflyttar sig för snabbt när man håller in en tangent.
 
         this.done = false                                           //  Variabel som håller koll på om biten har landat eller inte. false betyder att den inte landat.
+
+        this.keys = { down: 83, left: 65, right: 68, rotate: 87  }
+        // this.keys = keys
+        
+        // this.keys.down = 83
+        // this.keys.left = 65
+        
 
                 //  Detta är funktionen som kollar ifall man tryckt på tangenterna i spelet, samt flyttar ned bitarna automatiskt efter varje "tick"
         this.update = function() {
@@ -316,7 +323,7 @@
                 //  Annars, om man inte trycker in tangenten, nollställer vi keydowntime.key.
 
                 //  move left
-            if(keyboard.a) {
+            if(keyboard[this.keys.left]) {
                 if(this.keyDownTime.a%4 == 0) {
                     if(this.checkNext(2)){
                         this.x--
@@ -328,7 +335,7 @@
             }
 
                     //  move right
-            if(keyboard.d) {
+            if(keyboard[this.keys.right]) {
                 if(this.keyDownTime.d%4 == 0) {
                     if(this.checkNext(1)){
                         this.x++
@@ -341,7 +348,7 @@
             }
 
                     //  move down
-            if(keyboard.s) {
+            if(keyboard[this.keys.down]) {
                 if(this.keyDownTime.s%4 == 0) {
                     if(this.checkNext(0)){
                         this.y++
@@ -357,7 +364,7 @@
             }
 
                     // Rotate
-            if(keyboard.w) {
+            if(keyboard[this.keys.rotate]) {
                 if(this.keyDownTime.w%7 == 0){
                     if(this.checkNext(3)){
                         this.shape = this.rotate()
@@ -687,8 +694,8 @@
                 //  Ittererar nextFall.last 
                 theMaps[maps].nextFall.last++
             }
-    
-            theMaps[maps].nextFall.now++
+                    //  Skapa funktion i maps som gör detta så att vi inte ändrar på värden från den här platsen på det här viset
+            theMaps[maps].nextFall.now += theMaps[maps].data.fallSpeed
         }
 
     }
