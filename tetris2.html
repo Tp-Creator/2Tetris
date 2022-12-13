@@ -32,19 +32,24 @@
         //  This is a variable used for temporary counting för ready set go innan spelet börjar
     counter = 0
 
-        //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
-    nextFall = {now: 0, last: 0}
 
+
+
+    settings = {gamemode: 0, playerCount: 1, mapW: 10, mapH: 20, pixelS: 30}
+    
+    //  Antalspelare
+    
+    //  Skapar upp array för figurerna som skall finnas
+    players = []
+    
+    theMaps = []
 
         //  Sparar poäng och level för spelet. Kommer att visas, så att man kan jämföra hur bra/hur länge man kört.
         //  Level används även för att beskriva hur snabbt bitarna faller (se högst upp efter, variablern, i Figure konstruktorn)
-    data = {points: 0, level: 1}
+        data = {points: 0, level: 1}
 
-        //  Antalspelare
-    players = 1
-
-        //  Skapar upp array för figurerna som skall finnas
-    figures = []
+        //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
+        nextFall = {now: 0, last: 0}
 
 
 
@@ -132,6 +137,15 @@
                     ["x", "x", "x", "x"],
                     d = {c: "pink"}
                 ]*/]
+
+
+    function Map(x, y){
+        this.x = x
+        this.y = y
+        this.data = {pts: 0, lvl: 0, fallSpeed: 1}
+        this.nextFall = {now: 0, last: 0}
+        this.mapArray
+    }
 
     //  -----------------------------------------------------------------------------
     /*  Kontstruktorn Figure:
@@ -352,6 +366,27 @@
     //  Functioner
     //  -----------------------------------------------------------------------------
 
+    function gamePreparations() {
+        //  skapa upp mappar och players efter settings
+
+        switch(settings.gamestate) {
+                //One player
+            case 0:
+                for(i = 0; i < settings.playerCount; i++) {
+                    players[i] = newFigure(i)
+
+                    // theMaps[i] = 
+                }
+            break
+
+
+            case 1:
+
+            break
+        }
+
+    }
+
             //  Den här funktionen återställer arrayn som sparar alla bitar, utifrån map.width, map.height och map.pS
     function reDoMapArray(){
 
@@ -417,11 +452,11 @@
 
 
 
-    function newFigure() {
+    function newFigure(map=0) {
                 //  Slumpar ett värde (vilken figur som skall bli nästa)
         numOfNewShape = random(0, allShapes.length-1)
                 //  Skapar en ny figur med det slumpade värdet ovan
-        return new Figure(allShapes[numOfNewShape])
+        return new Figure(allShapes[numOfNewShape], map)
 
         //  Lägg till vilken map som ska till new Figure()
 
@@ -434,25 +469,25 @@
     //  Kod som loopar över aktuella figurer och uppdaterar deras positioner
     //  figure[0].update()
 
-        for(shapes = 0; shapes < figures.length; shapes++) {
+        for(shapes = 0; shapes < players.length; shapes++) {
 
                     //  Uppdaterar input och rörelser samt ritar ut figuren?
-            figures[shapes].update()
+            players[shapes].update()
 
                         //  Ersätter nextFigure()
                     //  Kollar om figuren är nere på botten
-            if(figures[shapes].done == true) {
+            if(players[shapes].done == true) {
 
                     //  Skriver in den gamla figuren i mapArrayen
                     //  (eftersom den måste finnas kvar och för att den inte längre behöver ittereras)
-                figures[shapes].drawToMap()
+                players[shapes].drawToMap()
 
-                    //  Skapar upp en ny figur med hjälp av konstruktorn Figure och sparar den i figures[i]
-                figures[shapes] = newFigure()
+                    //  Skapar upp en ny figur med hjälp av konstruktorn Figure och sparar den i players[i]
+                players[shapes] = newFigure()
 
                     //  Kollar om den nya figuren (innan den har flyttat sig), har spawnats i en gamal figur
                     //  Om så är fallet, så har man förlorat. gamestate 3 är game over
-                if(figures[shapes].checkNext() == false) {
+                if(players[shapes].checkNext() == false) {
                     gamestate = 3
                         //  Bryter if-satsen så att man inte får poäng om man förlorat
                     return
@@ -481,15 +516,15 @@
                 //  Flyttar ned alla figurer när "klockan har slagit" ett tick
             if(floor(nextFall.now/updatesPerSecond) > nextFall.last) {
                         //  Loopa över alla figurer och flytta ned dem ett steg
-                for(i = 0; i < figures.length; i++) {
+                for(i = 0; i < players.length; i++) {
 
                         //  Kontrollerar om vi kan flytta ned ett steg och flyttar isåfall ned biten ett steg
-                    if(figures[i].checkNext(0)) {
-                        figures[i].y++
+                    if(players[i].checkNext(0)) {
+                        players[i].y++
                         
                     } else {
                             //  Annars vet vi att den har nått botten av mappen och då säger vi att den är helt klar
-                        figures[i].done = true
+                        players[i].done = true
                     }
                 }
                     //  Ittererar nextFall.last 
@@ -659,8 +694,8 @@
                     gamestate = 2
                     
                         //  Förbereder genom att slumpa ut en ny bit och resetta mappen
-                    for(i = 0; i < players; i++) {
-                        figures[i] = newFigure()
+                    for(i = 0; i < settings.playerCount; i++) {
+                        players[i] = newFigure()
                     }
 
                     reDoMapArray()
@@ -726,8 +761,8 @@
                     //  Ritar ut spelplanen och den "aktuella" figuren.
                     //  Detta för att man skall se hur det såg ut när man förlorade
                 drawGame()
-                for(i = 0; i < figures.length; i++) {
-                    figures[i].draw()
+                for(i = 0; i < players.length; i++) {
+                    players[i].draw()
                 }
                 // movingFigure.draw()
 
@@ -744,8 +779,8 @@
                     //  Ritar ut spelplanen med alla figurer (inklusive den aktuella (den senaste)) och scoreboarden
                 drawGame()
 
-                for(i = 0; i < figures.length; i++) {
-                    figures[i].draw()
+                for(i = 0; i < players.length; i++) {
+                    players[i].draw()
                 }
                 // movingFigure.draw()
 

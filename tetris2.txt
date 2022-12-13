@@ -77,7 +77,29 @@ allPlayers = [
 (Fungerar kanske inte så bra för team mode)
 
 Gamemodes:
-	oberoende (1, 2?)
-	vs: (1, 2, 3)
-	Co-op (1, 2, 3)
-	vs 2-2?
+	oberoende (1, 2?)		player: x,  data: x,  map: x
+	vs: (1, 2, 3)			player: x, 	data: x,  map: x
+	Co-op (1, 2, 3)			player: x,	data: 1,  map: 1
+	vs 2-2?					player: 4,	data: 2,  map: 2
+
+data och map hör ihop.
+players borde vara separat. (de kan bara spawnas i vilken map som)
+
+players = [fig1, fig2, fig3]
+maps = [
+			{points: 0, level: 0, fallSpeed: 1, nextFall: {now: 0, last: 0} mapArray: [ [], [], [] ]},
+			{map1},
+			{map2}
+		  ]
+
+function fix all "theMaps" things(){
+	for antal maps
+		skapa upp basic stuff:
+			mapArray
+			data
+}
+
+function prepareGame() {
+	fix all "theMaps" things()
+	skapa upp antalet players
+}
