@@ -80,7 +80,7 @@ Gamemodes:
 	oberoende (1, 2?)		player: x,  data: x,  map: x
 	vs: (1, 2, 3)			player: x, 	data: x,  map: x
 	Co-op (1, 2, 3)			player: x,	data: 1,  map: 1
-	vs 2-2?					player: 4,	data: 2,  map: 2
+	Co-op-vs: 2-2?					player: 4,	data: 2,  map: 2
 
 data och map hör ihop.
 players borde vara separat. (de kan bara spawnas i vilken map som)
@@ -103,3 +103,45 @@ function prepareGame() {
 	fix all "theMaps" things()
 	skapa upp antalet players
 }
+
+
+Gamemodes
+
+0:
+	Sätta storlek på map settings (10x20)
+		skapa mapArray
+		
+	for antal spelare
+		skapa en varsin map
+			generera position så att alla får plats
+			lägga in mapArray
+		
+		skapa players och ge dem figurer
+
+
+1
+
+2
+
+3
+
+
+
+
+Formel för utrymme mellan boards:
+
+mapWidth
+howMany
+totalWidth
+
+(mapWidth + scoreBoardWidth) * howMany = minSpace
+
+minSpace*pixelSize = spaceNeeded
+
+totalWidth - spaceNeeded = spaceLeft
+
+spaceLeft/howMany+1 = spaceBetween
+
+posX1 = spaceBetween
+
+posX2 = spaceBetween * 2 + mapWidth+scoreBoardWidth
