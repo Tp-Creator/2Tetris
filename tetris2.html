@@ -32,10 +32,20 @@
         //  This is a variable used for temporary counting för ready set go innan spelet börjar
     counter = 0
 
+        //  Lägg på ett bättre ställe
+    diming = 15
+    yPos = -50
 
 
 
-    settings = {gamemode: 0, playerCount: 1, mapW: 10, mapH: 20, pixelS: 30}
+
+
+    settings = {    gamemode: 0,
+                    playerCount: 1,
+                    mapW: 10,               //  Map dimentions 10x20 default
+                    mapH: 20,               //  Map dimentions
+                    pixelS: 30              //  PixelSize (dimentionerna för varje ruta i spelet)
+               }
     
     //  Antalspelare
     
@@ -44,32 +54,11 @@
     
     theMaps = []
 
-        //  Sparar poäng och level för spelet. Kommer att visas, så att man kan jämföra hur bra/hur länge man kört.
-        //  Level används även för att beskriva hur snabbt bitarna faller (se högst upp efter, variablern, i Figure konstruktorn)
-        // data = {points: 0, level: 1}
-
-        // //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
-        // nextFall = {now: 0, last: 0}
 
 
-
-
-            /*  Skapar ett objekt för att hålla koll på mappen,
-                men skriver ut alla delarna för sig, för att det skall bli enklare att se */
-        // var map = {}
-        // map.width = 10                //  Map dimentions 10x20 default
-        // map.height = 20               //  Map dimentions
-        // map.pS = 30                   //  PixelSize (dimentionerna för varje ruta i spelet)
-
-        //     //  Dessa finns även i reDoMapArray för att resetta värdena efter att spelet är slut.
-        // map.x = totalWidth/2-(map.width+2)/2*map.pS         //  Koordinauter att börja rita mapen ifrån
-        // map.y = totalHeight/2-(map.height+2)/2*map.pS       //  Gör så att mappen blir centrerad, eftersom den utgår ifrån höjden och bredden av planen
-        // map.fallSpeed = 1                                   //  falls per second
-
-
-
-        // var mapArray = []   //  Arrayn med alla pixlar som skall ritas ut (har formatet som följer)
-                            //  Det blir därav naturligt att tänka att det blir som rader och kolumner
+//////////////////////////////////////////////////
+        //  Arrayn med alla pixlar som skall ritas ut (har formatet som följer).
+        //  Det blir därav naturligt att tänka att det blir som rader och kolumner
 
         /*
         mapArray = [    ["", "", "", "", ""]
@@ -80,6 +69,8 @@
                         ["green", "green", "red", "blue", ""]
                    ]
         */
+//////////////////////////////////////////////////
+
 
         //  Shapes som finns i spelet
         //  De bygger på en x*x stor array med arrayer i för att det senare skall bli enklare att loopa
@@ -139,17 +130,26 @@
                 ]*/]
 
 
+
+    //  -----------------------------------------------------------------------------
     //  Konstruktorer:
+    //  -----------------------------------------------------------------------------
+
+    /*  Konstruktorn Map
+    
+        Denna konstruktor skapa upp en hel spelplan utan players. Den innehåller metoder för att hantera sitt koordinautsystem och rita ut sig själv. Kolla rader, och håller sina egna poäng
+
+    */
 
     function Map(x, y, mapArray){
-        this.x = x
-        this.y = y
-        this.width = (settings.mapW+2)*settings.pixelS
-        this.height = (settings.mapH+2)*settings.pixelS
+        this.x = x                                                      //  Mapens x-position på skärmen (övre vänstra hörnet)
+        this.y = y                                                      //  Mapens y-position på skärmen (övre vänstra hörnet)
+        this.width = (settings.mapW+2)*settings.pixelS                  //  Mapens bredd i pixlar
+        this.height = (settings.mapH+2)*settings.pixelS                 //  Mapens höjd i pixlar
 
-        this.data = {pts: 0, lvl: 1, fallSpeed: 1}
-        this.nextFall = {now: 0, last: 0}
-        this.mapArray = mapArray
+        this.data = {pts: 0, lvl: 1, fallSpeed: 1}                      //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
+        this.nextFall = {now: 0, last: 0}                               //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
+        this.mapArray = mapArray                                        //  Arrayn med alla bitar sparade
 
         
                 // Ersätter global drawPixel()
@@ -266,7 +266,6 @@
 
     }
 
-    //  -----------------------------------------------------------------------------
     /*  Kontstruktorn Figure:
 
         Detta är konstruktorn som skapar själva spelet. Den används för att skapa en bit som har koll på sig själv,
@@ -274,7 +273,6 @@
         Den har funktioner för att rotera sig själv, flytta sig i olika riktningar och göra det på ett kontrollerat sätt (Reglering för hur det går att flytta och rotera bitarna)
 
     */
-    //  -----------------------------------------------------------------------------
 
     function Figure(shape, spawnMap=0, keys){                                         //  argumentet shape är en av figurerna som finns i arrayen allShapes
         this.map = spawnMap                                              //  Int for what map the shape should be rendered in
@@ -293,21 +291,16 @@
 
         this.done = false                                           //  Variabel som håller koll på om biten har landat eller inte. false betyder att den inte landat.
 
-        this.keys = { down: 83, left: 65, right: 68, rotate: 87  }
+        this.keys = { down: 83, left: 65, right: 68, rotate: 87 }   //  ASCII för S, A, D och W. Detta gör att vi kan skicka in till spelaren vilka keys den ska läsa av
         // this.keys = keys
         
         // this.keys.down = 83
         // this.keys.left = 65
         
 
-                //  Detta är funktionen som kollar ifall man tryckt på tangenterna i spelet, samt flyttar ned bitarna automatiskt efter varje "tick"
+                //  Detta är funktionen som kollar ifall man tryckt på tangenterna i spelet
         this.update = function() {
-                    //  + data.level/10 gör att hastigheten på spelet ökar hela tiden med 10% av utgångshastigheten (1)
-                    //  Men /10 kan ändras till ett godtyckligt tal, det säger bara hur mycket hastigheten ökar för varje level.
-                    //  Större ger långsammare och tvärtom
-            //this.nextFall.now += 1 + data.level/10
 
-         ////////////////////////////////////////////////////////////
                 //  move left, right, down och rotate
 
                 //  Först kollar vi om tangenten för den specifika händelsen är nedtryckt
@@ -322,7 +315,7 @@
                 //  Sedan ökar vi keydowntime.key med 1, om tangenten är nedtryckt
                 //  Annars, om man inte trycker in tangenten, nollställer vi keydowntime.key.
 
-                //  move left
+                //  MOVE LEFT
             if(keyboard[this.keys.left]) {
                 if(this.keyDownTime.a%4 == 0) {
                     if(this.checkNext(2)){
@@ -333,8 +326,9 @@
             } else if(!keyboard.a){
                 this.keyDownTime.a = 0
             }
+        /////////////////////////////////////
 
-                    //  move right
+                    //  MOVE RIGHT
             if(keyboard[this.keys.right]) {
                 if(this.keyDownTime.d%4 == 0) {
                     if(this.checkNext(1)){
@@ -346,8 +340,9 @@
             } else if(!keyboard.d){
                 this.keyDownTime.d = 0
             }
+        /////////////////////////////////////
 
-                    //  move down
+                    //  MOVE DOWN
             if(keyboard[this.keys.down]) {
                 if(this.keyDownTime.s%4 == 0) {
                     if(this.checkNext(0)){
@@ -362,8 +357,9 @@
             } else if(!keyboard.s) {
                 this.keyDownTime.s = 0
             }
+        /////////////////////////////////////
 
-                    // Rotate
+                    // ROTATE
             if(keyboard[this.keys.rotate]) {
                 if(this.keyDownTime.w%7 == 0){
                     if(this.checkNext(3)){
@@ -375,28 +371,8 @@
             } else if(!keyboard.w){
                 this.keyDownTime.w = 0
             }
-            ////////////////////////////////////
+            /////////////////////////////////////
 
-                    //  move down automaticly
-                    //  this.nextfall stegar upp varje gång funktionen körs, vilket är ungefär så många ggr i sekunden som updatesPerSecond är.
-                    //  floor gör att vi avrundar nedåt till närmsta heltal
-                    //  När vi då jämför med förra heltalet får vi att den tickar en gång/sekund om this.nextFall.now ökar med 1 varje updatesPerSecond
-                    //  Men nu så gör vi att den ittereras med 1 + data.level/10 vilket gör att hastigheten ökar med antalet levlar.
-                    //  (+ 1/10 av hastigheten per level)
-                    //  Sedan flyttar vi ned biten om tiden gått
-            // if(floor(this.nextFall.now/updatesPerSecond) > this.nextFall.last) {
-            //     if(this.checkNext(0)) {
-            //         this.y++
-            //     } else {
-            //             //  När det här händer så vet vi att den har nått botten av mappen
-            //         this.done = true
-            //         nextFigure()
-            //     }
-            //     this.nextFall.last++
-            // }
-
-            //     //  Ritar ut biten separat från drawMapArray funktionen, efter uppdateringen
-            // this.draw()
         }
 
         this.rotate = function(){
@@ -444,7 +420,7 @@
                     //  Gör att figuren vi kollar på blir en roterad version av figuren
                 tempFig = this.rotate()
             }
-                        //  Vi kollar helt enkelt om figuren krockar med ngt om den flyttas till (vänster, höger eller nedåt. Eller blivit roterad)
+                        //  Vi kollar helt enkelt om figuren krockar med ngt om den flyttas till (vänster, höger, nedåt eller blivit roterad)
             for(r = 0; r < this.dim; r++) {
                 for(c = 0; c < this.dim; c++) {
                     if(tempFig[r][c] == "x" && theMaps[this.map].mapArray[this.y+r+addY][this.x+c+addX] != "") {
@@ -528,21 +504,16 @@
             //  Den här funktionen återställer arrayn som sparar alla bitar, utifrån map.width, map.height och map.pS
     function createMapArray(width, height){
 
-                //  Resetar mapens positioner efter map.width och map.ps samt sätter fallspeeden till 1 igen
-        // map.x = totalWidth/2-(map.width+2)/2*map.pS         //  Koordinauter att börja rita mapen ifrån
-        // map.y = totalHeight/2-(map.height+2)/2*map.pS       //  Gör så att mappen blir centrerad, eftersom den utgår ifrån höjden och bredden av planen
-        // map.fallSpeed = 1                                   //  falls per second
-
         tempMapArray = []
 
-            //  Creates the array of the map with help of the map.width and map.height variables
-            //  map.height+2 är för att map.height är antalet rutor inuti och därav läggs det till 2 för kanterna
+            //  Creates the array of the map with help of the settings.mapW and settings.mapH variables
+            //  settings.mapH+2 är för att settings.mapH är antalet rutor inuti och därav läggs det till 2 för kanterna
         for (row = 0; row < height+2; row++) {
             tempMapArray.push([])
             for (cols = 0; cols < width+2; cols++) {
                         //  Gäller för alla kanter, för att färga dem grå
                 if (row == 0 || row == height+1 || cols == 0 || cols == width+1) {
-                    tempMapArray[row].push("#5E5E5E")   //  En typ av grå färg
+                    tempMapArray[row].push("#5E5E5E")   //  En typ av grå färg som blir spelets borders
                 } else {
                     tempMapArray[row].push("")          //  "" kommer senare att tolkas som "black"
                 }
@@ -554,56 +525,21 @@
     }
 
 
-    /*function drawPixel(x, y, color){
-                //  Ritar ut just pixeln på rätt rad och rätt kolumn
-                //  Utgår ifrån map.x och map.y som hjälper till att centrera planen
-                //  map.pS är storleken av varje pixel som multipliceras med vilken pixel vi är på i arrayen (cols resp. row)
-                //  Storleken är map.pS -1 för att det skall finnas en pixel mellan så att baksidan syns igenom mellan rutorna (pixlarna)
-        rectangle(map.x+map.pS*x, map.y+map.pS*y, map.pS-1, map.pS-1, color)
-    }*/
-
-
             //  Ritar bara ut alla banor med en for-loop
     function drawGame() {
+            //  Loopar över alla spelplaner och skriver ut planerna samt deras scoreboards
         for(i = 0; i < theMaps.length; i++) {
             theMaps[i].draw()
             theMaps[i].drawScoreboard()
         }
 
+            //  Loopar över alla spelare och ritar ut dem
         for(i = 0; i < players.length;  i++) {
             players[i].draw()
         }
     }
 
-
-    /*
-    function drawGame() {
-                //  Ritar en grå rektangel bakom mappen så att det blir som ljusa linjer mellan all "pixlar" (rutor)
-                //  Blir senare rutnätet bakom planen
-        rectangle(map.x, map.y, (map.width+2)*map.pS-1, (map.height+2)*map.pS-1, "grey")
-
-        for (row = 0; row < mapArray.length; row++){  //  Loopar över alla rader i arrayen
-
-                    //  mapArray[row].length ger längen på den raden av spel planen
-            for(col = 0; col < mapArray[row].length; col++) {    //  Loopar över all kolumner i varje rad
-
-                        /*  Kontrollerar om elementet (pixeln) är tom,
-                            och sätter isåfall fägern till svart ("" = "black" efter detta)
-                if(mapArray[row][col] == "") {
-                    color = "black"
-                } else {
-                        //  Annars skrivs färgen som finns där ut istället.
-                    color = mapArray[row][col]
-                }
-                        //  Ritar på skärmen med drawPixel funktionen.
-                drawPixel(col, row, color)
-            }
-        }
-    }*/
-
-
-
-
+            //  Redigera denna!!!!!!!   -   Anpassa för nya figure
     function newFigure(map=0) {
                 //  Slumpar ett värde (vilken figur som skall bli nästa)
         numOfNewShape = random(0, allShapes.length-1)
@@ -619,7 +555,6 @@
         //  Ersätter nextFigure()
     function updateFigures() {
     //  Kod som loopar över aktuella figurer och uppdaterar deras positioner
-    //  figure[0].update()
 
         for(shapes = 0; shapes < players.length; shapes++) {
 
@@ -646,11 +581,11 @@
                 }
 
                     //  Ökar antalet poäng med 10 om man lyckas placera en figur
-                theMaps[shapes].scoreUp(10)
+                theMaps[players[shapes].map].scoreUp(10)
 
                     //  Kollar om det finns några hela rader
                     //  Detta är det enda tillfället att göra det på eftersom det då kan ha tillkommit en ny rad när man nyss har placerat en bit
-                theMaps[shapes].checkRows()
+                theMaps[players[shapes].map].checkRows()
 
 
 
@@ -658,8 +593,7 @@
             
             
         }
-                //  Ersätter movingFigure.update()
-
+                //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
         ////////////////////////////////////7
 
         //  move down automaticly
@@ -691,7 +625,7 @@
                     players[i].done = true
                 }
                 }
-                //  Ittererar nextFall.last 
+                    //  Ittererar nextFall.last 
                 theMaps[maps].nextFall.last++
             }
                     //  Skapa funktion i maps som gör detta så att vi inte ändrar på värden från den här platsen på det här viset
@@ -699,111 +633,6 @@
         }
 
     }
-
-
-    // function nextFigure() {
-    //     //  Kontrollerar om nuvarande figur är nere på botten
-    //     if(movingFigure.done == true) {
-    //                 //  Skriver in den gamla figuren i mapArrayen
-    //                 //  (eftersom den måste finnas kvar och för att den inte längre behöver ittereras)
-    //         movingFigure.drawToMap()
-
-    //         //  Skapar upp en ny figur med hjälp av konstruktorn Figure och sparar den i movingFigure
-    //         movingFigure = newFigure()
-
-    //             //  Kollar om den nya figuren (innan den har flyttat sig), har spawnats i en gamal figur
-    //             //  Om så är fallet, så har man förlorat. gamestate 3 är game over
-    //         if(movingFigure.checkNext() == false) {
-    //             gamestate = 3
-    //                 //  Bryter if-satsen så att man inte får poäng om man förlorat
-    //             return
-    //         }
-
-    //             //  Ökar antalet poäng med 10 om man lyckas placera en figur
-    //         scoreBoard(10)
-
-    //             //  Kollar om det finns några hela rader
-    //             //  Detta är det enda tillfället att göra det på eftersom det då kan ha tillkommit en ny rad när man nyss har placerat en bit
-    //         checkRows()
-    //     }
-    // }
-
-
-    /*
-            //  En funktion för att kolla om det finns några hela rader som skall tas bort och gör det, om så är fallet.
-    function checkRows() {
-                //  Börjar på 1 och slutar med -1 för att vi inte ska ta kanten högst upp eller längst ned
-                //  Loopar över alla rader innuti ramen av mapArray
-        for(row = 1; row < mapArray.length-1; row++){
-            rowIsFull = true
-                    //  Kollar om någon alla rutor på raden är full
-                    //  Om inte returnerar den false och fortsätter loopa
-            for(col = 0; col < mapArray[0].length-1; col++) {
-                if(mapArray[row][col] == ""){
-                    rowIsFull = false
-                }
-            }
-                    //  Om en rad är full (vilket bara inträffar om ingen av rutorna var "")
-                    //  Tar vi bort den raden och flyttar ned alla rader ovan den borttagna raden.
-            if(rowIsFull == true){
-
-                        //  Flyttar varje rad som är ovanför raden som är full ned (och skriver över raden som är full)
-                        //  Detta är en optimering som gör att vi inte behöver sudda ut raden ovan. Istället skriver vi bara över den direkt
-                        //  abRow står för AboveRow, alltså alla rader som är ovanför raden vi har att göra med.
-                        //  Sedan gör vi ngt kul, vi loopar över alla rader baklänges tills vi kommer till den andra raden (index 1)
-                        //  Och säger att varje rad skall flyttas ned ett steg, "pixel för pixel"
-                        //  Jag kör loopen baklänges för att det är mer effektivt för just den här saken
-                        //  då det annars blir krongligt att hålla koll på de värden man håller på att skriva över en rad ner (för de vill man ju spara till att flytta ned de med...)
-                for(abRow = row; abRow > 1; abRow--){
-                    for(col = 1; col < mapArray[abRow].length-1; col ++) {
-                        mapArray[abRow][col] = mapArray[abRow-1][col]
-                    }
-                }
-
-                    //  Ökar antalet poäng med 100 (när en rad tagits bort)
-                scoreBoard(100)
-            }
-        }
-    }
-
-
-        /// Scoreboard funktioner
-        //  Har bara till uppgift att öka antalet poäng och kolla om nästa level skall gås till
-    function scoreBoard(points){
-        data.points += points
-
-                //  kollar om nuvarande leveln är mindre än nuvarande poängen/500
-                //  (att jag delar med 500 gör att man måste uppnå 500 till för varje level)
-        if(data.level < data.points/500){
-            data.level++
-        }
-    }
-
-            //  Denna funktion ritar ut rutan med poäng medan man spelar
-    function drawScoreboard() {
-            //map.x                     Mappens vänstersida
-            //map.width*(map.pS)        bredden på planen
-            //map.pS*2                  För de två sidorna som inte är inräknade i map.width
-            //50                        En distans från mappen till scoreboarden.
-        posX = map.x + map.width*(map.pS) + map.pS*2 + 15
-
-        posY = map.y               //   Höjden på mappen, scoreboarden blir då i höjd med mappen
-        w = 100                    //   Bredden på rutan
-        h = 160                    //   Höjden på rutan
-
-            // Gör en ram runt om poängen
-        rectangle(posX, posY, w, h, "grey")
-        rectangle(posX+1, posY+1, w-2, h-2, "black")
-
-            //  Poäng utskrivning
-        text(posX+10, posY+25, 15, "Score:", "white")
-        text(posX+10, posY+50, 15, data.points, "white")
-
-            //  Level utskrivning
-            text(posX+10, posY+100, 15, "Level:", "white")
-            text(posX+10, posY+125, 15, data.level, "white")
-
-    }*/
 
 
 
@@ -835,12 +664,12 @@
                     //  När man trycker på space sätter vi counter till 0 (den används för att animationen innan spelet börjar skall fungera)
                 if(keyboard.enter) {
                     gamestate = 1
-                        //  Reset:ar levlar och poäng så att man inte behåller dem till nästa spel
-                    // data.points = 0
-                    // data.level = 0
-
                 }
+
             break
+
+
+
                 //  Countdown inför spelets start
             case 1:
 
@@ -857,44 +686,35 @@
                 if(counter/updatesPerSecond > 3 || keyboard.space) {
                     gamestate = 2
                     
-                        //  Förbereder genom att slumpa ut en ny bit och resetta mappen
-
-                        prepareGame()
-
-                    // for(i = 0; i < settings.playerCount; i++) {
-                    //     players[i] = newFigure()
-                    // }
-
-                    // reDoMapArray()
-
+                        //  Förbereder genom att slumpa ut en ny bit och skapa upp map:ar
+                    prepareGame()
 
                         //  Nollställer räknaren till nästa gång den skall visas
                     counter = 0
 
                 } else if(counter/updatesPerSecond > 2) {
                     text(totalWidth/2-80, totalHeight/2-30, 60, "GO!", "white")
+
                 } else if(counter/updatesPerSecond > 1) {
                     text(totalWidth/2-100, totalHeight/2-30, 60, "Set", "white")
+
                 } else {
                     text(totalWidth/2-150, totalHeight/2-30, 60, "Ready?", "white")
                 }
 
-
-
             break
+
+
+
+
                 // The actuall game!
             case 2:
 
-                    //  uppdaterar helt enkelt bitens position utifrån knapptryck
+                    //  Uppdaterar bitens position utifrån knapptryck och flyttar ned biten om det gått ett tick i map:en
                 updateFigures()
 
-                    //  Ritar ut spelplanen och den aktiva biten som man flyttar på
-                // drawGame()
+                    //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
                 drawGame()
-                
-
-                    //  Ritar en scoreboard med poäng och level till höger om spelplanen.
-                // drawScoreboard()
 
                     //  En pause sida om man trycker på p
                 if(keyboard.p) {
@@ -902,44 +722,40 @@
                 }
 
             break
+
+
+
+
                 //  Gameover
             case 3:
                 
-                //     //  detta är positionen på gameover texten med mera som skall skrivas ut.
-                //     //  Se drawScoreboard för förklaring av uttrycket.
-                // xPos = map.x + map.width*(map.pS) + map.pS*2 + 80
+                //  Tänker mig att man mörkar bort spelplanerna och sedan låter man all data komma in från höger och visa scores
+                //  Måste optimeras mycket mer
 
 
-                // //  Skapar en animation med banan som flyttas till vänster
-                // //  Hela banan flyttas tills map.x blir totalWidth/9
-                // if(map.x > totalWidth/9) {
-                //     map.x -= 4
-                // }
+                if(diming < 220) {
+                    diming += 2
+                    hexDim = diming.toString(16)
+                    console.log(hexDim)
+                    console.log(diming)
+                }
 
-                //         //  Skriver ut "Game over" när banan flyttats en viss bit av avståndet
-                // if(map.x < totalWidth/6){
-                    text(300, totalHeight/2-240, 50, "Game over", "white")
-                // }
-                //         //  Skriver ut ytterligare info när mappen flyttats en bit till
-                // if(map.x < totalWidth/8) {
+                if(yPos < 200) {
+                    yPos += 2
+                }
 
-                //                     //  Sätter ihop text och variabel genom att använda "+"
-                //     text(xPos, totalHeight/2-180, 20, 'Level : '+"lägg till level här!", "white")
-                //     text(xPos, totalHeight/2-140, 20, 'Points: '+"Lägg till points här!", "white")
-                //     text(xPos, totalHeight/2+50, 20, 'Press "space" to go to main Menu', "white")
-                // }
-
-                    //  Ritar ut spelplanen och den "aktuella" figuren.
-                    //  Detta för att man skall se hur det såg ut när man förlorade
-                // drawGame()
                 drawGame()
+                rectangle(0, 0, totalWidth, totalHeight, "#000000"+hexDim)
 
-                // for(i = 0; i < players.length; i++) {
-                //     players[i].draw()
-                // }
-                // movingFigure.draw()
 
-                        //  Gå till main menu och instruktioner
+
+
+                text(totalWidth/2-250, yPos, 50, "Game over", "white")
+
+                text(totalWidth/2-300, totalHeight/2+50, 20, 'Press "space" to go to main Menu', "white")
+
+
+                    //  Gå till main menu och instruktioner
                 if(keyboard.space){
                     gamestate = 0
                 }
@@ -949,16 +765,8 @@
                 //  Pause
             case 4:
 
-                    //  Ritar ut spelplanen med alla figurer (inklusive den aktuella (den senaste)) och scoreboarden
-                // drawGame()
+                    //  Ritar ut spelplanen med alla figurer (inklusive den aktuella) och scoreboarden
                 drawGame()
-
-                // for(i = 0; i < players.length; i++) {
-                //     players[i].draw()
-                // }
-                // movingFigure.draw()
-
-                // drawScoreboard()
 
                         //  Lägger över en svart ruta på allt, med opacity, så att man kan se spelplanen igenom den.
                         //  Detta gör att man inte känner att man kommit långt ifrån spelet utan att man faktiskt bara har pausat.

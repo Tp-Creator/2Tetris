@@ -158,9 +158,13 @@ Gör så att olika spelare får olika tangenter att trycka på för att styra
 /// --->
 
 implementera keys grejen så att man får olika keys på olika players
+Lägg i settings
+
 
 Fixa så att fallspeeden blir ökad med antalet levlar
 
 fixa gameover
 
 fixa de andra gamemodesen
+
+newFigure() behöver redigeras och optimeras
