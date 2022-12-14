@@ -44,7 +44,7 @@
 
 
 
-    settings = {    gamemode: 0,
+    settings = {    gamemode: 1,
                     playerCount: 2,
                     mapW: 10,               //  Map dimentions 10x20 default
                     mapH: 20,               //  Map dimentions
@@ -247,6 +247,8 @@
                 //  (att jag delar med 500 gör att man måste uppnå 500 till för varje level)
             if(this.data.lvl < this.data.pts/500){
                 this.data.lvl++
+                console.log("change speed")
+                changeFallSpeeds()
             }
 
         }
@@ -280,6 +282,7 @@
                 text(posX+10, posY+200, 15, this.data.fallDelay, "white")
         }
 
+                //  
         this.fallPlayers = function(){
             
             if(this.nextFall <= Date.now()) {
@@ -296,10 +299,15 @@
                     }
                     
                 }
-                
+
                 this.nextFall = Date.now() + this.data.fallDelay
             }
         }
+
+        this.setFallDelay = function(ms){
+            this.data.fallDelay = ms
+        }
+
     }
 
     /*  Kontstruktorn Player:
@@ -643,50 +651,50 @@
             
         }
                 //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
-        ////////////////////////////////////7
-
-        //  move down automaticly
-        //  this.nextfall stegar upp varje gång funktionen körs, vilket är ungefär så många ggr i sekunden som updatesPerSecond är.
-        //  floor gör att vi avrundar nedåt till närmsta heltal
-        //  När vi då jämför med förra heltalet får vi att den tickar en gång/sekund om this.nextFall.now ökar med 1 varje updatesPerSecond
-        //  Men nu så gör vi att den ittereras med 1 + data.level/10 vilket gör att hastigheten ökar med antalet levlar.
-        //  (+ 1/10 av hastigheten per level)
-        //  Sedan flyttar vi ned biten om tiden gått
-
-        //  Flyttar ned alla figurer när "klockan har slagit" ett tick
-
         for(maps = 0; maps < theMaps.length; maps++) {
-
+                    //  Kontrollerar om det har gått en "tick" i ngn av map:arna och flyttar isåfall ned alla bitarna i den map:en
             theMaps[maps].fallPlayers()
-
-            // if(floor(theMaps[maps].nextFall.now/updatesPerSecond) > theMaps[maps].nextFall.last) {
-            //         //  Loopa över alla figurer och flytta ned dem ett steg
-            //     for(i = 0; i < players.length; i++) {
-    
-            //             //  Om de inte tillhör spelplanen som det har gått en tick i avbryt den här itterationen och gå till nästa
-            //     if(players[i].map != maps){
-            //         continue
-            //     }
-    
-            //         //  Kontrollerar om vi kan flytta ned ett steg och flyttar isåfall ned biten ett steg
-            //     if(players[i].checkNext(0)) {
-            //         players[i].y++
-                    
-            //     } else {
-            //             //  Annars vet vi att den har nått botten av mappen och då säger vi att den är helt klar
-            //         players[i].done = true
-            //     }
-            //     }
-            //         //  Ittererar nextFall.last 
-            //     theMaps[maps].nextFall.last++
-            // }
-            //         //  Skapa funktion i maps som gör detta så att vi inte ändrar på värden från den här platsen på det här viset
-            // theMaps[maps].nextFall.now += theMaps[maps].data.fallSpeed
         }
 
     }
 
 
+    function changeFallSpeeds(){
+        console.log("början")
+        switch(settings.gamemode){
+
+            case 0:
+                for(i = 0; i < theMaps.length; i++){
+                    lvl = theMaps[i].data.lvl-1
+
+                    theMaps[i].setFallDelay(1000*0.9**lvl)
+                }
+
+            break
+
+                    //  Versus      ger fall speed till alla andra än en själv
+                //  Uppgradera med skräp rader till de andra för mer intense gameplay
+            case 1:
+                for(var i = 0; i < theMaps.length; i++){
+                    var lvl = 0
+                    var count = 0
+                    console.log(2)
+                    for(var others = 0; others < theMaps.length; others++){
+                        if(others != i){
+                            console.log(3)
+                            lvl += theMaps[others].data.lvl-1
+                            count++
+                        }
+                    }
+                    lvl = lvl/count
+
+                    theMaps[i].setFallDelay(1000*0.9**lvl)
+                }
+            break
+
+
+        }
+    }
 
 
     /////////////////////////////////////////////
