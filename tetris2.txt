@@ -155,13 +155,28 @@ Gör så att olika spelare får olika tangenter att trycka på för att styra
 
 	keyboard[this.keys.left]
 
-/// --->
 
 implementera keys grejen så att man får olika keys på olika players
 Lägg i settings
 
+/// --->
 
 Fixa så att fallspeeden blir ökad med antalet levlar
+
+	global
+		klock = 0 
+
+	Maps:
+		nextFall {now, last}
+
+		fallPlayers
+			om nextfall >= klock
+				flytta ned alla bitar i mappen
+				nextfall = updatesPerSecond - fallSpeed 
+
+	varje itteration
+		klock++
+
 
 fixa gameover
 

@@ -19,6 +19,10 @@
 
     */
 
+    //     //  Visar keycode på de tangenter man trycker på
+    // keyboard.verbose = true
+    //     //  Mappar in esc i keyboard
+    // keyboard[27] = "esc"
 
     //  Variabler
 
@@ -41,7 +45,7 @@
 
 
     settings = {    gamemode: 0,
-                    playerCount: 1,
+                    playerCount: 2,
                     mapW: 10,               //  Map dimentions 10x20 default
                     mapH: 20,               //  Map dimentions
                     pixelS: 30,              //  PixelSize (dimentionerna för varje ruta i spelet)
@@ -146,14 +150,17 @@
 
     */
 
-    function Map(x, y, mapArray){
+    function Map(x, y, p, mapArray){
         this.x = x                                                      //  Mapens x-position på skärmen (övre vänstra hörnet)
         this.y = y                                                      //  Mapens y-position på skärmen (övre vänstra hörnet)
         this.width = (settings.mapW+2)*settings.pixelS                  //  Mapens bredd i pixlar
         this.height = (settings.mapH+2)*settings.pixelS                 //  Mapens höjd i pixlar
 
-        this.data = {pts: 0, lvl: 1, fallSpeed: 1}                      //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
-        this.nextFall = {now: 0, last: 0}                               //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
+        this.players = p
+
+        this.data = {pts: 0, lvl: 1, fallDelay: 1000}                      //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
+        // this.nextFall = {now: 0, last: 0}                               //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
+        this.nextFall = Date.now() + this.data.fallDelay
         this.mapArray = mapArray                                        //  Arrayn med alla bitar sparade
 
         
@@ -254,7 +261,7 @@
 
             posY = this.y               //   Höjden på mappen, scoreboarden blir då i höjd med mappen
             w = 100                    //   Bredden på rutan
-            h = 160                    //   Höjden på rutan
+            h = 230                    //   Höjden på rutan
 
                 // Gör en ram runt om poängen
             rectangle(posX, posY, w, h, "grey")
@@ -264,11 +271,35 @@
                 text(posX+10, posY+25, 15, "Score:", "white")
                 text(posX+10, posY+50, 15, this.data.pts, "white")
 
-                //  Level utskrivning
+                    //  Level utskrivning
                 text(posX+10, posY+100, 15, "Level:", "white")
-                text(posX+10, posY+125, 15, this.data.lvl, "white")   
+                text(posX+10, posY+125, 15, this.data.lvl, "white")
+                
+                    //  Fallspeed utskrivning
+                text(posX+10, posY+175, 15, "Speed:", "white")
+                text(posX+10, posY+200, 15, this.data.fallDelay, "white")
         }
 
+        this.fallPlayers = function(){
+            
+            if(this.nextFall <= Date.now()) {
+                for(i = 0; i < this.players.length; i++) {
+                
+                    p = players[this.players[i]]
+
+                    if(p.checkNext(0)) {
+                        p.y++
+    
+                    } else {
+                            //  Annars vet vi att den har nått botten av mappen och då säger vi att den är helt klar
+                        p.done = true
+                    }
+                    
+                }
+                
+                this.nextFall = Date.now() + this.data.fallDelay
+            }
+        }
     }
 
     /*  Kontstruktorn Player:
@@ -281,26 +312,14 @@
 
     function Player(spawnMap=0, keys){                                         //  argumentet shape är en av figurerna som finns i arrayen allShapes
         this.map = spawnMap                                              //  Int for what map the shape should be rendered in
-        // this.color = shape[shape.length-1].c                        //  Sparar ned figurens specifika färg
-        // this.shape = shape.slice(0, -1)                             //  Sparar ned shapen i objektet (och struntar i färgen (därav splice(0, -1) som tar alla element utom det sista)), så att den blir global innom objektet.
-        // this.dim   = this.shape[0].length                           //  Ger längden på första raden av figuren (eftersom den är en kvadrat ger det vilka dimentioner figuren har (x*x))
-
-        
-        // this.x = ceil(settings.mapW/2)                                  //  Figurens x koordinaut, beräknad från mitten av mappen
-        // this.positionCorrection = ceil(this.shape[0].length/2)-1    //  Detta är en korregering av positionen x så att biten spawnas i mitten, eller till vänster om mitten (berående på figurens dimentioner)
-        // this.x -= this.positionCorrection                           //  Vi lägger ihop this.positionCorrection med this.x (för att vi skall slippa skriva ut den hela tiden. (Jag är lat :))
-
-        // this.y = 1                                                  //  Figurens y koordinaut, börjar på 1 vilket är nästan längst upp
 
         this.keyDownTime = {left: 0, down: 0, rotate: 0, right: 0}  //  Detta är cooldown variabler för förflyttning och rotation, så att de inte roterar eller förflyttar sig för snabbt när man håller in en tangent.
 
         this.done = false                                           //  Variabel som håller koll på om biten har landat eller inte. false betyder att den inte landat.
 
-        // this.keys = { down: 83, left: 65, right: 68, rotate: 87 }   //  ASCII för S, A, D och W. Detta gör att vi kan skicka in till spelaren vilka keys den ska läsa av
-        this.keys = keys
         
-        // this.keys.down = 83
-        // this.keys.left = 65
+        this.keys = keys                         // this.keys = { down: 83, left: 65, right: 68, rotate: 87 }   //  ASCII för S, A, D och W. Detta gör att vi kan skicka in till spelaren vilka keys den ska läsa av
+        
         
         this.newFigure = function() {
             tempFig = allShapes[ random(0, allShapes.length-1) ]            //  Slumpar ut en ny shape
@@ -531,6 +550,7 @@
     function prepareGame() {
         //  skapa upp mappar och players efter settings
 
+
         
             //  Senare: 5+5[antalplayers]
 
@@ -538,23 +558,27 @@
             emptySpaceBetween = (totalWidth - totalMapWidth * settings.playerCount) / (settings.playerCount+1)
 
         switch(settings.gamemode) {
-                //One player
+                //Ensamstående  -  (finns flera spelare)
             case 0:
-
+            case 1:
                 for(i = 0; i < settings.playerCount; i++) {
                     players[i] = new Player(i, settings.pKeys[i]) 
-                    // newFigure(i, settings.pKeys[i])
 
                         //  Skapa mapArray
-                    tempMapArray = createMapArray(settings.mapW, settings.mapH)
+                    tempMapArray = createMapArray(settings.mapW, settings.mapH)         //  Skapar en mapArray
                 
-                    theMaps[i] = new Map((emptySpaceBetween * (i + 1)) + (totalMapWidth * i), totalHeight/2-(settings.mapH+2)/2*settings.pixelS, tempMapArray)
+                    xPos = (emptySpaceBetween * (i + 1)) + (totalMapWidth * i)          //  Ger positionen i x-led (emtptySpace en mellan varje plan) och sedan lägger vi på i antal spelplans bredder (första ggn är i = 0)
+                    yPos = totalHeight/2-(settings.mapH+2)/2*settings.pixelS            //  Ger positionen i y-led (tar halva skärmens höjd och subtraherar med halva spelplanens höjd)
+
+                    playerIDs = i                                                       //  Vi kommer alltid att ha bara en spelare per bana i de här gamestaten
+
+                    theMaps[i] = new Map(xPos, yPos, [playerIDs], tempMapArray)                      //  Skapar en ny map
                 }
 
             break
 
 
-            case 1:
+            case 2:
 
             break
         }
@@ -599,18 +623,6 @@
         }
     }
 
-    //         //  Redigera denna!!!!!!!   -   Anpassa för nya figure
-    // function newFigure(map=0, keys) {
-    //             //  Slumpar ett värde (vilken figur som skall bli nästa)
-    //     numOfNewShape = random(0, allShapes.length-1)
-    //             //  Skapar en ny figur med det slumpade värdet ovan
-    //     return new Figure(map, keys)
-
-    //     //  Lägg till vilken map som ska till new Figure()
-
-    // }
-
-
 
         //  Ersätter nextFigure()
     function updateFigures() {
@@ -624,34 +636,8 @@
                         //  Ersätter nextFigure()
                     //  Kollar om figuren är nere på botten
             if(players[shapes].done == true) {
-
+                    //  Skapa en ny figur till spelaren och ge lite poäng och sånt
                 players[shapes].reNew()
-
-
-                //     //  Skriver in den gamla figuren i mapArrayen
-                //     //  (eftersom den måste finnas kvar och för att den inte längre behöver ittereras)
-                // players[shapes].drawToMap()
-
-                //     //  Skapar upp en ny figur med hjälp av konstruktorn Figure och sparar den i players[i]
-                // players[shapes] = newFigure(shapes)
-
-                //     //  Kollar om den nya figuren (innan den har flyttat sig), har spawnats i en gamal figur
-                //     //  Om så är fallet, så har man förlorat. gamestate 3 är game over
-                // if(players[shapes].checkNext() == false) {
-                //     gamestate = 3
-                //         //  Bryter loopen-satsen så att man inte får poäng om man förlorat
-                //     return
-                // }
-
-                //     //  Ökar antalet poäng med 10 om man lyckas placera en figur
-                // theMaps[players[shapes].map].scoreUp(10)
-
-                //     //  Kollar om det finns några hela rader
-                //     //  Detta är det enda tillfället att göra det på eftersom det då kan ha tillkommit en ny rad när man nyss har placerat en bit
-                // theMaps[players[shapes].map].checkRows()
-
-
-
             }
             
             
@@ -670,29 +656,32 @@
         //  Flyttar ned alla figurer när "klockan har slagit" ett tick
 
         for(maps = 0; maps < theMaps.length; maps++) {
-            if(floor(theMaps[maps].nextFall.now/updatesPerSecond) > theMaps[maps].nextFall.last) {
-                    //  Loopa över alla figurer och flytta ned dem ett steg
-                for(i = 0; i < players.length; i++) {
+
+            theMaps[maps].fallPlayers()
+
+            // if(floor(theMaps[maps].nextFall.now/updatesPerSecond) > theMaps[maps].nextFall.last) {
+            //         //  Loopa över alla figurer och flytta ned dem ett steg
+            //     for(i = 0; i < players.length; i++) {
     
-                        //  Om de inte tillhör spelplanen som det har gått en tick i avbryt den här itterationen och gå till nästa
-                if(players[i].map != maps){
-                    continue
-                }
+            //             //  Om de inte tillhör spelplanen som det har gått en tick i avbryt den här itterationen och gå till nästa
+            //     if(players[i].map != maps){
+            //         continue
+            //     }
     
-                    //  Kontrollerar om vi kan flytta ned ett steg och flyttar isåfall ned biten ett steg
-                if(players[i].checkNext(0)) {
-                    players[i].y++
+            //         //  Kontrollerar om vi kan flytta ned ett steg och flyttar isåfall ned biten ett steg
+            //     if(players[i].checkNext(0)) {
+            //         players[i].y++
                     
-                } else {
-                        //  Annars vet vi att den har nått botten av mappen och då säger vi att den är helt klar
-                    players[i].done = true
-                }
-                }
-                    //  Ittererar nextFall.last 
-                theMaps[maps].nextFall.last++
-            }
-                    //  Skapa funktion i maps som gör detta så att vi inte ändrar på värden från den här platsen på det här viset
-            theMaps[maps].nextFall.now += theMaps[maps].data.fallSpeed
+            //     } else {
+            //             //  Annars vet vi att den har nått botten av mappen och då säger vi att den är helt klar
+            //         players[i].done = true
+            //     }
+            //     }
+            //         //  Ittererar nextFall.last 
+            //     theMaps[maps].nextFall.last++
+            // }
+            //         //  Skapa funktion i maps som gör detta så att vi inte ändrar på värden från den här platsen på det här viset
+            // theMaps[maps].nextFall.now += theMaps[maps].data.fallSpeed
         }
 
     }
