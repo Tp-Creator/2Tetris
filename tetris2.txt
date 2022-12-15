@@ -178,13 +178,30 @@ Fixa så att fallspeeden blir ökad med antalet levlar
 (blev inte som ovan)
 
 
+
+
+AddRowsOfCrap
+	antal spelare
+	antal rader
+	senaste spelare lagd på				-----	Lägg till detta i Map
+
+	spelare = senaste spelare lagd på
+
+	for rader
+		om jag
+			nästa
+
+		map[spelare % players.length-1].crap(1)
+	
+	theMaps[p.map].lastCrapMap(ID_of_that_map= spelare % players.length-1)
+
+
 /// --->
 
-fixa de andra gamemodesen
+fixa team play gamemode
 
 fixa gameover
 	(för olika gamemodes)
 	oberoende låt den spela om opåverkat av de andra
 
-
-newFigure() behöver redigeras och optimeras
+Fixa keys så att det blir rätt med tangenterna

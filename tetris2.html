@@ -156,12 +156,14 @@
         this.width = (settings.mapW+2)*settings.pixelS                  //  Mapens bredd i pixlar
         this.height = (settings.mapH+2)*settings.pixelS                 //  Mapens höjd i pixlar
 
-        this.players = p
+        this.players = p                                                //  Array med alla players som spelar i den här map:en
 
         this.data = {pts: 0, lvl: 1, fallDelay: 1000}                      //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
         // this.nextFall = {now: 0, last: 0}                               //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
         this.nextFall = Date.now() + this.data.fallDelay
         this.mapArray = mapArray                                        //  Arrayn med alla bitar sparade
+
+        this.lastCrapMap = 0                                            //  ID:t på map:en man senast lagt till rader i (i versus mode (gamemode 1))
 
         
                 // Ersätter global drawPixel()
@@ -202,38 +204,43 @@
                 //  Ersätter global checkRows()
                 //  En funktion för att kolla om det finns några hela rader som skall tas bort och gör det, om så är fallet.
         this.checkRows = function(){
-                //  Börjar på 1 och slutar med -1 för att vi inte ska ta kanten högst upp eller längst ned
-                //  Loopar över alla rader innuti ramen av mapArray
-        for(row = 1; row < this.mapArray.length-1; row++){
-            rowIsFull = true
-                    //  Kollar om någon alla rutor på raden är full
-                    //  Om inte returnerar den false och fortsätter loopa
-            for(col = 0; col < this.mapArray[0].length-1; col++) {
-                if(this.mapArray[row][col] == ""){
-                    rowIsFull = false
-                }
-            }
-                    //  Om en rad är full (vilket bara inträffar om ingen av rutorna var "")
-                    //  Tar vi bort den raden och flyttar ned alla rader ovan den borttagna raden.
-            if(rowIsFull == true){
+            rowsDeleted = 0
 
-                        //  Flyttar varje rad som är ovanför raden som är full ned (och skriver över raden som är full)
-                        //  Detta är en optimering som gör att vi inte behöver sudda ut raden ovan. Istället skriver vi bara över den direkt
-                        //  abRow står för AboveRow, alltså alla rader som är ovanför raden vi har att göra med.
-                        //  Sedan gör vi ngt kul, vi loopar över alla rader baklänges tills vi kommer till den andra raden (index 1)
-                        //  Och säger att varje rad skall flyttas ned ett steg, "pixel för pixel"
-                        //  Jag kör loopen baklänges för att det är mer effektivt för just den här saken
-                        //  då det annars blir krongligt att hålla koll på de värden man håller på att skriva över en rad ner (för de vill man ju spara till att flytta ned de med...)
-                for(abRow = row; abRow > 1; abRow--){
-                    for(col = 1; col < this.mapArray[abRow].length-1; col ++) {
-                        this.mapArray[abRow][col] = this.mapArray[abRow-1][col]
+                    //  Börjar på 1 och slutar med -1 för att vi inte ska ta kanten högst upp eller längst ned
+                    //  Loopar över alla rader innuti ramen av mapArray
+            for(row = 1; row < this.mapArray.length-1; row++){
+                rowIsFull = true
+                        //  Kollar om någon alla rutor på raden är full
+                        //  Om inte returnerar den false och fortsätter loopa
+                for(col = 0; col < this.mapArray[0].length-1; col++) {
+                    if(this.mapArray[row][col] == ""){
+                        rowIsFull = false
                     }
                 }
+                        //  Om en rad är full (vilket bara inträffar om ingen av rutorna var "")
+                        //  Tar vi bort den raden och flyttar ned alla rader ovan den borttagna raden.
+                if(rowIsFull == true){
+                    rowsDeleted++
 
-                    //  Ökar antalet poäng med 100 (när en rad tagits bort)
-                this.scoreUp(100)
+                            //  Flyttar varje rad som är ovanför raden som är full ned (och skriver över raden som är full)
+                            //  Detta är en optimering som gör att vi inte behöver sudda ut raden ovan. Istället skriver vi bara över den direkt
+                            //  abRow står för AboveRow, alltså alla rader som är ovanför raden vi har att göra med.
+                            //  Sedan gör vi ngt kul, vi loopar över alla rader baklänges tills vi kommer till den andra raden (index 1)
+                            //  Och säger att varje rad skall flyttas ned ett steg, "pixel för pixel"
+                            //  Jag kör loopen baklänges för att det är mer effektivt för just den här saken
+                            //  då det annars blir krongligt att hålla koll på de värden man håller på att skriva över en rad ner (för de vill man ju spara till att flytta ned de med...)
+                    for(abRow = row; abRow > 1; abRow--){
+                        for(col = 1; col < this.mapArray[abRow].length-1; col ++) {
+                            this.mapArray[abRow][col] = this.mapArray[abRow-1][col]
+                        }
+                    }
+
+                        //  Ökar antalet poäng med 100 (när en rad tagits bort)
+                    this.scoreUp(100)
+                }
             }
-        }
+                //  Returnerar hur många rader som blev borttagna
+            return rowsDeleted
         }
 
                 //  Ersätter global scoreBoard()
@@ -304,8 +311,75 @@
             }
         }
 
+
         this.setFallDelay = function(ms){
             this.data.fallDelay = ms
+        }
+
+                //  Lägger till skräp rader längst ned i map:en
+        this.addCrapRow = function(num=0){
+            mapWidth = this.mapArray[0].length
+
+            //  Loopa över alla rader ovan ifrån och flyttar upp dem ett steg
+            //  Om raden högst upp har bitar i sig: Lose!
+            console.log("removed row")
+
+                //  Börjar på 1 och slutar med -1 för att vi inte ska ta kanten högst upp eller längst ned
+                //  Loopar över alla rader innuti ramen av mapArray
+
+            for(col = 1; col < mapWidth-1; col++){
+                if(this.mapArray[1][col] != ""){
+                        //  Om en av rutorna högst upp har en bit i sig förlorar man per automatik när golvet slår i taket
+                    gamestate = 3
+                }        
+            }
+
+                    //  Kollar om någon alla rutor på raden är full
+                    //  Om inte returnerar den false och fortsätter loopa
+            for(row = 2; row < this.mapArray.length-1; row++){
+                
+                for(col = 1; col < mapWidth-1; col++) {
+                            //  Låter rutan över bli den vi är på nu
+                    this.mapArray[row-1][col] = this.mapArray[row][col]
+                    console.log("safe")
+                }                    
+            }
+
+            //  Slumpa fram en array med bitar och färger och lägg den längst ned
+
+            totHoles = random(2, ceil(mapWidth/4))
+            holesDone = 0
+            crapRow = []
+            
+            for(col = 0; col < mapWidth-2; col++){
+
+                        //  Om antalet rader kvar att skapa är mindre än antalet rader kvar som ska ha hål, gör hål
+                        //  Om vi inte har gjort så många hål vi vill ha, kör random om vi ska göra ett
+                if(totHoles - holesDone > mapWidth - crapRow.length - 2 || (holesDone < totHoles && random(2) == 1)){
+                    crapRow[col] = ""
+                    holesDone++
+                        //  Hoppar till nästa itteration av for-loopen
+                    continue
+                }
+                        //  Om vi inte ska skapa en tom ruta så skapar vi en med färg i istället
+                randomShape = allShapes[random(0, allShapes.length-1)]
+                randomColor = randomShape[randomShape.length-1].c
+                crapRow[col] = randomColor
+
+
+            }
+
+                    //  Loopar över sista raden och lägger in den slumpade raden längst ned
+            for(col = 1; col < mapWidth-1; col++){
+                this.mapArray[this.mapArray.length-2][col] = crapRow[col]
+            }
+
+
+        }
+
+                //  Uppdaterar senaste map:en man lagt skräp i efter att man tagit bort egna rader
+        this.updateLCM = function(last){
+            this.lastCrapMap = last
         }
 
     }
@@ -348,6 +422,10 @@
                 //  Detta är funktionen som kollar ifall man tryckt på tangenterna i spelet
         this.update = function() {
 
+                    //  Om biten fallit klart så har den och då får man inte längre flytta på den
+            if(this.done == true){
+                return
+            }
                 //  move left, right, down och rotate
 
                 //  Först kollar vi om tangenten för den specifika händelsen är nedtryckt
@@ -516,7 +594,7 @@
 
                         //  Kollar om det finns några hela rader
                         //  Detta är det enda tillfället att göra det på eftersom det då kan ha tillkommit en ny rad när man nyss har placerat en bit
-                theMaps[this.map].checkRows()
+                // theMaps[this.map].checkRows()
 
                 this.done = false
 
@@ -559,7 +637,6 @@
         //  skapa upp mappar och players efter settings
 
 
-        
             //  Senare: 5+5[antalplayers]
 
             totalMapWidth = ((settings.mapW+2) * settings.pixelS) + 130
@@ -633,21 +710,26 @@
 
 
         //  Ersätter nextFigure()
-    function updateFigures() {
+    function updateGame() {
     //  Kod som loopar över aktuella figurer och uppdaterar deras positioner
 
         for(shapes = 0; shapes < players.length; shapes++) {
-
+            p = players[shapes]
                     //  Uppdaterar input och rörelser samt ritar ut figuren?
-            players[shapes].update()
-
+            p.update()
                         //  Ersätter nextFigure()
                     //  Kollar om figuren är nere på botten
-            if(players[shapes].done == true) {
+            if(p.done == true) {
                     //  Skapa en ny figur till spelaren och ge lite poäng och sånt
-                players[shapes].reNew()
+                p.reNew()
+                
+                delRows = theMaps[p.map].checkRows()
+
+                if(settings.gamemode == 1){
+                    doCrapRows(p, delRows)
+                }
+
             }
-            
             
         }
                 //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
@@ -660,7 +742,6 @@
 
 
     function changeFallSpeeds(){
-        console.log("början")
         switch(settings.gamemode){
 
             case 0:
@@ -691,9 +772,40 @@
                     theMaps[i].setFallDelay(1000*0.9**lvl)
                 }
             break
-
-
         }
+    }
+
+    function doCrapRows(player, delRows){
+
+        if(delRows > 1) {
+            crapMap = theMaps[player.map].lastCrapMap       //  Senaste map vi skräpat ned och den map vi nu kommer att börja med
+            numOfP = players.length-1                       //  Antal spelare som finns
+
+                    //  Loopar över antalet rader som tagits bort
+            for(rows = 0; rows < delRows; rows++){
+
+                        //  Kollar så att nästa map vi ska lägga till en rad på existerar
+                if(crapMap > numOfP){
+                    crapMap = 0
+                }
+                        //  Kollar så att map:en vi ska lägga till en rad i inte är den egna map:en
+                if(crapMap == player.map){
+                    crapMap++                
+                            //  Kollar igen ifall map:en vi ska lägga bitar i är en existerande map
+                    if(crapMap > numOfP){
+                        crapMap = 0
+                    }
+                }
+
+                        //  Lägger till en rad i den map vi ska
+                theMaps[crapMap].addCrapRow()
+                        //  Ökar crapMap med 1
+                crapMap++
+            }
+
+            theMaps[player.map].updateLCM(crapMap)
+        }
+
     }
 
 
@@ -771,7 +883,7 @@
             case 2:
 
                     //  Uppdaterar bitens position utifrån knapptryck och flyttar ned biten om det gått ett tick i map:en
-                updateFigures()
+                updateGame()
 
                     //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
                 drawGame()
