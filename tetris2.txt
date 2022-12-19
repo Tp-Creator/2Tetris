@@ -198,10 +198,48 @@ AddRowsOfCrap
 
 /// --->
 
-fixa team play gamemode
-
 fixa gameover
 	(för olika gamemodes)
 	oberoende låt den spela om opåverkat av de andra
 
+
+	alla
+		rita ut sista biten
+		Sluta slumpa bitar i den mapen
+		dimma ut den
+		visa gameover och vad man ska göra
+
+	enskild
+		alla ska vara separata från varandra
+		press key to restart
+
+	versus
+		gameover tills bara en av spelarna lever
+		Då ranking vem som vann
+
+	
+	Map.gameover
+	map.display gameover
+		Info om how to restart
+	
+	real gameover
+
+
+
+	Map
+		gameover status
+
+	Player
+		- (gameover?)
+
+	updateGame()
+		kollar om player.done och theMaps[player.map].gameover != tru
+			skapa ny bit
+
+	drawGame()
+		Sluta rita players som är gameover
+
+
 Fixa keys så att det blir rätt med tangenterna
+
+fixa team play gamemode

@@ -36,12 +36,6 @@
         //  This is a variable used for temporary counting för ready set go innan spelet börjar
     counter = 0
 
-        //  Lägg på ett bättre ställe
-    diming = 15
-    yPos = -50
-
-
-
 
 
     settings = {    gamemode: 1,
@@ -55,13 +49,6 @@
                                 { rotate: 85, left: 72, down: 74, right: 75 }       //  u, h, j och k
                            ]
                }
-    
-    //  Antalspelare
-    
-    //  Skapar upp array för figurerna som skall finnas
-    players = []
-    
-    theMaps = []
 
 
 
@@ -163,6 +150,8 @@
         this.nextFall = Date.now() + this.data.fallDelay
         this.mapArray = mapArray                                        //  Arrayn med alla bitar sparade
 
+        this.gamestate = 1                                              //  Säger vilken del av spelet vi är (1: i spel, 0: gameover, 2: pause)
+
         this.lastCrapMap = 0                                            //  ID:t på map:en man senast lagt till rader i (i versus mode (gamemode 1))
 
         
@@ -198,6 +187,72 @@
                             //  Ritar på skärmen med drawPixel funktionen.
                     this.drawPixel(col, row, color)
                 }
+            }
+        }
+
+        this.drawPlayers = function(){
+            for(plr = 0; plr < this.players.length; plr++){
+                p = players[this.players[plr]]
+                p.draw()
+            }
+        }
+
+        this.update = function(){
+                //  Draws the map
+            this.draw()
+            this.drawScoreboard()
+
+            switch(this.gamestate){
+
+                    //  Gameover
+                case 0:
+                    this.drawPlayers()
+                    rectangle(this.x, this.y, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
+                    text(this.x+100, this.y+100, 25, "Gameover", "white")
+                    if(settings.gamemode == 0){
+                        text(this.x+80, this.y+200, 20, "Press funkkey", "white")
+                        text(this.x+90, this.y+235, 20, "to continue", "white")
+                    } else if (settings.gamemode == 1){
+                        text(this.x+80, this.y+200, 20, "Wait until the", "white")
+                        text(this.x+90, this.y+235, 20, "Game is over", "white")
+                    }
+                break
+
+                    //  In game
+                case 1:
+                    this.fallPlayers()
+
+                    for(plr = 0; plr < this.players.length; plr++) {
+                        p = players[this.players[plr]]
+
+                                //  Uppdaterar input och rörelser samt ritar ut figuren
+                        p.update()
+                        p.draw()
+
+                                    //  Ersätter nextFigure()
+                                //  Kollar om figuren är nere på botten     Och att map:en inte nått gameover status
+                        if(p.done == true && this.gamemode != true) {
+                                //  Skapa en ny figur till spelaren och ge lite poäng och sånt
+                            p.reNew()
+                            
+                            delRows = this.checkRows()
+
+                            if(settings.gamemode == 1){
+                                doCrapRows(p, delRows)
+                            }
+                        }
+                    }
+
+                break
+
+                    //  Pause
+                case 2:
+                    this.drawPlayers()
+                    rectangle(this.x, this.y, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
+                    text(this.x+100, this.y+100, 25, "Paused", "white")
+                    text(this.x, this.y+150, 20, "press funkkey to play", "white")
+                break
+
             }
         }
 
@@ -260,38 +315,40 @@
 
         }
 
-
                 //  Ersätter global drawScoreBoard()
                 //  Denna funktion ritar ut rutan med poäng medan man spelar
         this.drawScoreboard = function() {
                 //this.x                     Mappens vänstersida
                 //15                        En distans från mappen till scoreboarden.
-            posX = this.x + this.width + 15
+            posX = this.x + this.width + settings.pixelS/2
+            fontS = settings.pixelS/2
+            margin = settings.pixelS/3
+            lineBr = settings.pixelS/6*5
 
-            posY = this.y               //   Höjden på mappen, scoreboarden blir då i höjd med mappen
-            w = 100                    //   Bredden på rutan
-            h = 230                    //   Höjden på rutan
+            posY = this.y                               //   Höjden på mappen, scoreboarden blir då i höjd med mappen
+            w = settings.pixelS*3.5                     //   Bredden på rutan
+            h = settings.pixelS*8                       //   Höjden på rutan
 
                 // Gör en ram runt om poängen
             rectangle(posX, posY, w, h, "grey")
             rectangle(posX+1, posY+1, w-2, h-2, "black")
 
                     //  Poäng utskrivning
-                text(posX+10, posY+25, 15, "Score:", "white")
-                text(posX+10, posY+50, 15, this.data.pts, "white")
+                text(posX+margin, posY+lineBr, fontS, "Score:", "white")
+                text(posX+margin, posY+lineBr*2, fontS, this.data.pts, "white")
 
                     //  Level utskrivning
-                text(posX+10, posY+100, 15, "Level:", "white")
-                text(posX+10, posY+125, 15, this.data.lvl, "white")
+                text(posX+margin, posY+lineBr*4, fontS, "Level:", "white")
+                text(posX+margin, posY+lineBr*5, fontS, this.data.lvl, "white")
                 
                     //  Fallspeed utskrivning
-                text(posX+10, posY+175, 15, "Speed:", "white")
-                text(posX+10, posY+200, 15, this.data.fallDelay, "white")
+                text(posX+margin, posY+lineBr*7, fontS, "Speed:", "white")
+                text(posX+margin, posY+lineBr*8, fontS, floor(this.data.fallDelay), "white")
         }
 
                 //  
         this.fallPlayers = function(){
-            
+                //  Kontrollerar om det har gått en "tick" i ngn av map:arna och flyttar isåfall ned alla bitarna i den map:en
             if(this.nextFall <= Date.now()) {
                 for(i = 0; i < this.players.length; i++) {
                 
@@ -330,7 +387,12 @@
             for(col = 1; col < mapWidth-1; col++){
                 if(this.mapArray[1][col] != ""){
                         //  Om en av rutorna högst upp har en bit i sig förlorar man per automatik när golvet slår i taket
-                    gamestate = 3
+                    // gamestate = 3       //  Gameover
+                    this.gamestate = 0  //  Gameover
+
+                    if(settings.gamemode == 1){
+                        result.push(players[this.players[0]].map)       //  Lägger in vilken map som förlorade nyss
+                    }
                 }        
             }
 
@@ -609,7 +671,13 @@
                         //  Kollar om den nya figuren (innan den har flyttat sig), har spawnats i en gammal figur
                         //  Om så är fallet, så har man förlorat. gamestate 3 är game over
                 if(this.checkNext() == false) {
-                    gamestate = 3
+                    // gamestate = 3
+                    theMaps[this.map].gamestate = 0 //  gameover i map:en
+
+                    if(settings.gamemode == 1){
+                        result.push(this.map)           //  Skriver in i result vilken map som nyss förlorade
+                    }
+
                         //  Bryter loopen-satsen så att man inte får poäng om man förlorat
                     return
                 }
@@ -633,13 +701,25 @@
     //  -----------------------------------------------------------------------------
 
             //  Ersätter reDoMapArray() och lite annan kod i gamestate 1 och mer...
+            //  skapar upp map:ar och players efter settings
     function prepareGame() {
-        //  skapa upp mappar och players efter settings
+
+            //  Skapar upp arrayer för spelarna och spelplanerna som skall finnas
+        players = []
+        theMaps = []
 
 
-            //  Senare: 5+5[antalplayers]
+            //  array där ordningen de förlorar skrivs in
+        result = []
 
-            totalMapWidth = ((settings.mapW+2) * settings.pixelS) + 130
+            //  Gameover screen     -- Variabler föratt dimma skrämen och animera text
+        diming = 15
+        yPos = -50
+
+
+
+                //  Senare: 5+5[antalplayers]   
+            totalMapWidth = ((settings.mapW+2) * settings.pixelS) + settings.pixelS*4
             emptySpaceBetween = (totalWidth - totalMapWidth * settings.playerCount) / (settings.playerCount+1)
 
         switch(settings.gamemode) {
@@ -695,7 +775,7 @@
 
 
             //  Ritar bara ut alla banor med en for-loop
-    function drawGame() {
+    function drawGameOnly() {
             //  Loopar över alla spelplaner och skriver ut planerna samt deras scoreboards
         for(i = 0; i < theMaps.length; i++) {
             theMaps[i].draw()
@@ -713,29 +793,56 @@
     function updateGame() {
     //  Kod som loopar över aktuella figurer och uppdaterar deras positioner
 
-        for(shapes = 0; shapes < players.length; shapes++) {
-            p = players[shapes]
-                    //  Uppdaterar input och rörelser samt ritar ut figuren?
-            p.update()
-                        //  Ersätter nextFigure()
-                    //  Kollar om figuren är nere på botten
-            if(p.done == true) {
-                    //  Skapa en ny figur till spelaren och ge lite poäng och sånt
-                p.reNew()
+        // for(shapes = 0; shapes < players.length; shapes++) {
+        //     p = players[shapes]
+        //             //  Uppdaterar input och rörelser samt ritar ut figuren?
+        //     p.update()
+        //                 //  Ersätter nextFigure()
+        //             //  Kollar om figuren är nere på botten     Och att map:en inte nått gameover status
+        //     if(p.done == true && theMaps[p.map].gamemode != true) {
+        //             //  Skapa en ny figur till spelaren och ge lite poäng och sånt
+        //         p.reNew()
                 
-                delRows = theMaps[p.map].checkRows()
+        //         delRows = theMaps[p.map].checkRows()
 
-                if(settings.gamemode == 1){
-                    doCrapRows(p, delRows)
+        //         if(settings.gamemode == 1){
+        //             doCrapRows(p, delRows)
+        //         }
+        //     }
+        // }
+
+                //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
+            gameovers = 0
+        for(maps = 0; maps < theMaps.length; maps++) {
+                    
+            theMaps[maps].update()
+
+                    //  Räknar antal döda
+            if(theMaps[maps].gamestate == 0) {
+                gameovers++
+            }
+
+        }
+                    //  Om det är versus och alla utom en är döda så måste en vinnare koras i gameover
+        if(settings.gamemode == 1 && gameovers >= theMaps.length-1){
+            gamestate = 3   //  Gameover när alla utom en av spelarna är döda
+
+            for(map = 0; map < theMaps.length; map++){
+                inResult = false
+                for(res = 0; res < result.length; res++){
+                    if(result[res] == map){
+                        inResult = true
+                    }
                 }
 
+                if(inResult == false){
+                    result.push(map)
+                }
             }
-            
         }
-                //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
-        for(maps = 0; maps < theMaps.length; maps++) {
-                    //  Kontrollerar om det har gått en "tick" i ngn av map:arna och flyttar isåfall ned alla bitarna i den map:en
-            theMaps[maps].fallPlayers()
+
+        if(settings.gamemode == 0 && gameovers >= theMaps.length){
+            gamestate = 3
         }
 
     }
@@ -885,11 +992,11 @@
                     //  Uppdaterar bitens position utifrån knapptryck och flyttar ned biten om det gått ett tick i map:en
                 updateGame()
 
-                    //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
-                drawGame()
+                //     //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
+                // drawGameOnly()
 
                     //  En pause sida om man trycker på p
-                if(keyboard.p) {
+                if(keyboard.p && settings.gamemode == 1) {
                     gamestate = 4
                 }
 
@@ -898,45 +1005,79 @@
 
 
 
-                //  Gameover
+                //  Gameover        ////////////////////////////////////////////////////
             case 3:
                 
                 //  Tänker mig att man mörkar bort spelplanerna och sedan låter man all data komma in från höger och visa scores
                 //  Måste optimeras mycket mer
 
 
-                if(diming < 220) {
-                    diming += 2
-                    hexDim = diming.toString(16)            //  Omvandlar dimming till talbas 16 (hexadecimalt) för att kunna sätta in det i färgen senare
-                }
 
-                if(yPos < 200) {
+                if(yPos < 100) {
                     yPos += 2
                 }
 
-                drawGame()
-                rectangle(0, 0, totalWidth, totalHeight, "#000000"+hexDim)
+                        //  Ritar ut spelplanen och alla bitar, så att de finns i bakgrunden
+                drawGameOnly()
+                rectangle(0, 0, totalWidth, totalHeight, "#000000E5")
+
+                switch(settings.gamemode){
+                        //  För ensamspel en spelare
+                    case 0:
 
 
 
+                        // if(diming < 220) {
+                        //     diming += 2
+                        //     hexDim = diming.toString(16)            //  Omvandlar dimming till talbas 16 (hexadecimalt) för att kunna sätta in det i färgen senare
+                        // }
 
-                text(totalWidth/2-250, yPos, 50, "Game over", "white")
+                        text(100, yPos, 50, "Game Over!", "white")
 
-                text(totalWidth/2-300, totalHeight/2+50, 20, 'Press "space" to go to main Menu', "white")
+                        for(i = 0; i < theMaps.length; i++){
+                            text(100, 200 + i*75, 30, "Player "+ (i+1) +"   Score: " + theMaps[i].data.pts)
+                        }
+
+                    break
+
+
+                        // Om det varit gamemode Versus  
+                    case 1:
+
+                            
+                        text(80, yPos, 50, "Game Over!", "grey")
+
+                            //  First place
+                        text(100, 250, 45, "Winner:  player " + (result[result.length-1]+1) + "  |  Score: "+ theMaps[result[result.length-1]].data.pts, "white")
+
+                            //  Second place
+                        text(100, 350, 20, "2nd:  player " + (result[result.length-2]+1) + "  |  Score: "+ theMaps[result[result.length-2]].data.pts, "white")
+                        
+                        if(result.length >= 3){
+                            text(100, 400, 20, "3rd:  player " + (result[result.length-3]+1) + "  |  Score: "+ theMaps[result[result.length-3]].data.pts, "white")
+                        }
+                        
+                            // for(i = 0; i < result.length-1; i++){
+                            
+                        // }
+                    break
+                }
+
+                text(totalWidth/2-300, totalHeight-100, 20, 'Press "space" to go to main Menu', "white")
 
 
                     //  Gå till main menu och instruktioner
                 if(keyboard.space){
                     gamestate = 0
                 }
-
+                ////////////////////////////////////////////////////////////    
 
             break
                 //  Pause
             case 4:
 
                     //  Ritar ut spelplanen med alla figurer (inklusive den aktuella) och scoreboarden
-                drawGame()
+                drawGameOnly()
 
                         //  Lägger över en svart ruta på allt, med opacity, så att man kan se spelplanen igenom den.
                         //  Detta gör att man inte känner att man kommit långt ifrån spelet utan att man faktiskt bara har pausat.
@@ -954,6 +1095,11 @@
                     gamestate = 2
                 }
 
+            break
+
+                //  Settings
+            case 5:
+                text(totalWidth/2-150, 100, 50, "Settings", "white")
             break
         }
 
