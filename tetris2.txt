@@ -196,11 +196,11 @@ AddRowsOfCrap
 	theMaps[p.map].lastCrapMap(ID_of_that_map= spelare % players.length-1)
 
 
-/// --->
 
 fixa gameover
 	(för olika gamemodes)
 	oberoende låt den spela om opåverkat av de andra
+
 
 
 	alla
@@ -218,6 +218,8 @@ fixa gameover
 		Då ranking vem som vann
 
 	
+
+
 	Map.gameover
 	map.display gameover
 		Info om how to restart
@@ -229,6 +231,8 @@ fixa gameover
 	Map
 		gameover status
 
+
+
 	Player
 		- (gameover?)
 
@@ -239,6 +243,9 @@ fixa gameover
 	drawGame()
 		Sluta rita players som är gameover
 
+/// --->
+
+Fixa omstart på oberoende
 
 Fixa keys så att det blir rätt med tangenterna
 

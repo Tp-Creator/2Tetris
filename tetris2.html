@@ -38,15 +38,15 @@
 
 
 
-    settings = {    gamemode: 1,
+    settings = {    gamemode: 0,
                     playerCount: 2,
                     mapW: 10,               //  Map dimentions 10x20 default
                     mapH: 20,               //  Map dimentions
                     pixelS: 30,              //  PixelSize (dimentionerna för varje ruta i spelet)
                     pKeys: [
-                                { rotate: 38, left: 37, down: 40, right: 39 },      //  Pilknapparna
-                                { rotate: 87, left: 65, down: 83, right: 68 },      //  w, a, s och d
-                                { rotate: 85, left: 72, down: 74, right: 75 }       //  u, h, j och k
+                                { rotate: 38, left: 37, down: 40, right: 39, funk: 16},      //  Pilknapparna + funk: shift
+                                { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },      //  w, a, s och d
+                                { rotate: 85, left: 72, down: 74, right: 75, funk: 73 }       //  u, h, j och k
                            ]
                }
 
@@ -145,14 +145,15 @@
 
         this.players = p                                                //  Array med alla players som spelar i den här map:en
 
-        this.data = {pts: 0, lvl: 1, fallDelay: 1000}                      //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
-        // this.nextFall = {now: 0, last: 0}                               //  Detta är ett objekt som håller koll på hur ofta bitarna skall falla. se "move down automaticly" i this.update()
-        this.nextFall = Date.now() + this.data.fallDelay
+        this.data = {pts: 0, lvl: 1, fallDelay: 1000}                   //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
+        this.nextFall = Date.now() + this.data.fallDelay                //  Håller tidpunkten för nästa fall av bitarna i map:en
         this.mapArray = mapArray                                        //  Arrayn med alla bitar sparade
 
         this.gamestate = 1                                              //  Säger vilken del av spelet vi är (1: i spel, 0: gameover, 2: pause)
 
         this.lastCrapMap = 0                                            //  ID:t på map:en man senast lagt till rader i (i versus mode (gamemode 1))
+
+        this.counter = 0                                                //  En variabel vars syfte är att stega upp till värden för att få en effekt se this.update()
 
         
                 // Ersätter global drawPixel()
@@ -182,7 +183,7 @@
                         color = "black"
                     } else {
                             //  Annars skrivs färgen som finns där ut istället.
-                        color = mapArray[row][col]
+                        color = this.mapArray[row][col]
                     }
                             //  Ritar på skärmen med drawPixel funktionen.
                     this.drawPixel(col, row, color)
@@ -207,11 +208,19 @@
                     //  Gameover
                 case 0:
                     this.drawPlayers()
-                    rectangle(this.x, this.y, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
+                    rectangle(this.x-1, this.y-1, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
                     text(this.x+100, this.y+100, 25, "Gameover", "white")
                     if(settings.gamemode == 0){
-                        text(this.x+80, this.y+200, 20, "Press funkkey", "white")
-                        text(this.x+90, this.y+235, 20, "to continue", "white")
+                    text(this.x+28, this.y+200, 20, "Press your rotation", "white")
+                    text(this.x+90, this.y+235, 20, "key to play", "white")
+
+                        for(key = 0; key < this.players.length; key++){
+                            if(keyboard[players[this.players[key]].keys.rotate]){
+                                this.reNew()
+                                this.gamestate = 3
+                            }
+                        }
+
                     } else if (settings.gamemode == 1){
                         text(this.x+80, this.y+200, 20, "Wait until the", "white")
                         text(this.x+90, this.y+235, 20, "Game is over", "white")
@@ -241,6 +250,9 @@
                                 doCrapRows(p, delRows)
                             }
                         }
+                        if(keyboard[players[this.players[plr]].keys.funk]){
+                            this.gamestate = 2
+                        }
                     }
 
                 break
@@ -248,9 +260,47 @@
                     //  Pause
                 case 2:
                     this.drawPlayers()
-                    rectangle(this.x, this.y, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
-                    text(this.x+100, this.y+100, 25, "Paused", "white")
-                    text(this.x, this.y+150, 20, "press funkkey to play", "white")
+                    rectangle(this.x-1, this.y-1, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
+                    text(this.x+115, this.y+100, 25, "Paused", "white")
+                    text(this.x+28, this.y+200, 20, "Press your rotation", "white")
+                    text(this.x+90, this.y+235, 20, "key to play", "white")
+
+                    for(key = 0; key < this.players.length; key++){
+                            if(keyboard[players[this.players[key]].keys.rotate]){
+                                this.gamestate = 3
+                            }
+                        }
+
+                break
+
+                    //  Timer before the start up of the map, after a pause
+                case 3:
+                    
+                    this.drawPlayers()
+                    rectangle(this.x-1, this.y-1, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
+
+                    this.counter++
+
+                            //  Countdown inför själva spelet.
+                            //  Kollar hur mycket counter/updatesPerSecond är och tar en text per värde.
+                            //  counter/updatesPerSecond ger en per sekund
+                    if(this.counter/updatesPerSecond > 3) {
+                            //  hoppar till spelet igen
+                        this.gamestate = 1
+
+                            //  Nollställer räknaren till nästa gång den skall visas
+                        this.counter = 0
+
+                    } else if(this.counter/updatesPerSecond > 2) {
+                        text(this.x+this.width/2-45, this.y+this.height/2-20, 40, "GO!", "white")
+
+                    } else if(this.counter/updatesPerSecond > 1) {
+                        text(this.x+this.width/2-50, this.y+this.height/2-20, 40, "Set", "white")
+
+                    } else {
+                        text(this.x+this.width/2-80, this.y+this.height/2-20, 40, "Ready?", "white")
+                    }
+
                 break
 
             }
@@ -309,7 +359,6 @@
                 //  (att jag delar med 500 gör att man måste uppnå 500 till för varje level)
             if(this.data.lvl < this.data.pts/500){
                 this.data.lvl++
-                console.log("change speed")
                 changeFallSpeeds()
             }
 
@@ -379,7 +428,6 @@
 
             //  Loopa över alla rader ovan ifrån och flyttar upp dem ett steg
             //  Om raden högst upp har bitar i sig: Lose!
-            console.log("removed row")
 
                 //  Börjar på 1 och slutar med -1 för att vi inte ska ta kanten högst upp eller längst ned
                 //  Loopar över alla rader innuti ramen av mapArray
@@ -403,7 +451,6 @@
                 for(col = 1; col < mapWidth-1; col++) {
                             //  Låter rutan över bli den vi är på nu
                     this.mapArray[row-1][col] = this.mapArray[row][col]
-                    console.log("safe")
                 }                    
             }
 
@@ -444,6 +491,17 @@
             this.lastCrapMap = last
         }
 
+
+        this.reNew = function(){
+            this.data = {pts: 0, lvl: 1, fallDelay: 1000}                   //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
+            this.nextFall = Date.now() + this.data.fallDelay                //  Håller tidpunkten för nästa fall av bitarna i map:en
+            this.mapArray = createMapArray(settings.mapW, settings.mapH)    //  Arrayn med alla bitar sparade
+            this.gamestate = 1                                              //  Säger vilken del av spelet vi är (1: i spel, 0: gameover, 2: pause)
+
+            for(pl = 0; pl < this.players.length; pl++){
+                players[this.players[pl]].newFigure()
+            }
+        }
     }
 
     /*  Kontstruktorn Player:
@@ -791,26 +849,6 @@
 
         //  Ersätter nextFigure()
     function updateGame() {
-    //  Kod som loopar över aktuella figurer och uppdaterar deras positioner
-
-        // for(shapes = 0; shapes < players.length; shapes++) {
-        //     p = players[shapes]
-        //             //  Uppdaterar input och rörelser samt ritar ut figuren?
-        //     p.update()
-        //                 //  Ersätter nextFigure()
-        //             //  Kollar om figuren är nere på botten     Och att map:en inte nått gameover status
-        //     if(p.done == true && theMaps[p.map].gamemode != true) {
-        //             //  Skapa en ny figur till spelaren och ge lite poäng och sånt
-        //         p.reNew()
-                
-        //         delRows = theMaps[p.map].checkRows()
-
-        //         if(settings.gamemode == 1){
-        //             doCrapRows(p, delRows)
-        //         }
-        //     }
-        // }
-
                 //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
             gameovers = 0
         for(maps = 0; maps < theMaps.length; maps++) {
@@ -855,7 +893,7 @@
                 for(i = 0; i < theMaps.length; i++){
                     lvl = theMaps[i].data.lvl-1
 
-                    theMaps[i].setFallDelay(1000*0.9**lvl)
+                    theMaps[i].setFallDelay(1000-lvl*50)
                 }
 
             break
@@ -866,10 +904,8 @@
                 for(var i = 0; i < theMaps.length; i++){
                     var lvl = 0
                     var count = 0
-                    console.log(2)
                     for(var others = 0; others < theMaps.length; others++){
                         if(others != i){
-                            console.log(3)
                             lvl += theMaps[others].data.lvl-1
                             count++
                         }
@@ -1035,7 +1071,7 @@
                         text(100, yPos, 50, "Game Over!", "white")
 
                         for(i = 0; i < theMaps.length; i++){
-                            text(100, 200 + i*75, 30, "Player "+ (i+1) +"   Score: " + theMaps[i].data.pts)
+                            text(100, 200 + i*75, 30, "Player "+ (i+1) +"   Score: " + theMaps[i].data.pts + "   Level: " + theMaps[i].data.lvl, "white")
                         }
 
                     break
