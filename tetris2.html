@@ -48,7 +48,7 @@
 
 
     settings = {    gamemode: 0,
-                    playerCount: 2,
+                    playerCount: 1,
                     mapW: 10,               //  Map dimentions 10x20 default
                     mapH: 20,               //  Map dimentions
                     pixelS: 30,              //  PixelSize (dimentionerna för varje ruta i spelet)
@@ -59,7 +59,6 @@
                         { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },        //  w, a, s, d och e
                         { rotate: 85, left: 72, down: 74, right: 75, funk: 73 },        //  u, h, j, k och i
                         { rotate: 38, left: 37, down: 40, right: 39, funk: 16 }         //  Pilknapparna + funk: shift
-
                   ]
 
 
@@ -835,6 +834,8 @@
             break
         }
 
+        settings.pKeys = []
+
         switch(settings.playerCount){
             case 1:
                 settings.pKeys[0] = tempKeys[2]
@@ -1207,10 +1208,11 @@
                 //     //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
                 // drawGameOnly()
 
-                text(20, totalHeight-20, 20, "p --> Pause", "white")
+                centerText(60, 40, 20, "ESC", "white")
+                centerText(60, 70, 15, "(Pause)", "white")
 
                     //  En pause sida om man trycker på p
-                if(keyboard.p) {
+                if(keyboard.esc) {
                     gamestate = 4
                 }
 
@@ -1299,17 +1301,17 @@
                 rectangle(0, 0, totalWidth, totalHeight, "#000000D9")
 
                         //  Skriver ut text för var man är och vad man gör för att fortsätta spela
-                text(totalWidth/2-160, totalHeight/2-200, 60, "Paused", "white")
-                text(totalWidth/2-145, totalHeight/2-100, 30, "Press space ", "white")
-                text(totalWidth/2-40, totalHeight/2-50, 30, "to", "white")
-                text(totalWidth/2-200, totalHeight/2, 30, "continue playing", "white")
+                centerText(totalWidth/2, totalHeight/2-200, 60, "Paused", "white")
+                text(totalWidth/2-230, totalHeight/2-100, 20, "[Space]", "green")
+                text(totalWidth/2-110, totalHeight/2-100, 20, "--> Continue playing", "white")
 
-                text(50, 60, 30, "ESC", "white")
+                text(totalWidth/2-105, totalHeight/2, 20, "[Q]", "red")
+                text(totalWidth/2-50, totalHeight/2, 20, "--> Quit", "white")
 
                         //  Skickar dig en tillbaka till spelet
                 if(keyboard.space) {
                     gamestate = 2
-                } else if(keyboard.esc){
+                } else if(keyboard.q){
                     gamestate = 0
                 }
 
@@ -1372,6 +1374,12 @@
                                         settings.playerCount = menustate.inner.col+1
                                         if(settings.playerCount == 1){
                                             settings.gamemode = 0    
+                                        } 
+
+                                        if(settings.playerCount >= 3){
+                                            settings.pixelS = 25
+                                        } else {
+                                            settings.pixelS = 30
                                         }
 
                                         mapKeysToPlayers()
@@ -1496,5 +1504,5 @@
 
     }
 
-    
+
     </script>
