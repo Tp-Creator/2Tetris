@@ -21,8 +21,12 @@
 
     //     //  Visar keycode på de tangenter man trycker på
     // keyboard.verbose = true
-    //     //  Mappar in esc i keyboard
-    // keyboard[27] = "esc"
+
+        //  Mappar in esc i keyboard på key 27 vilket vi testat med raden ovan att det är esc blir då namnet på tangenten så vi kan skriva keyboard.esc
+    keyboard.names[27] = "esc"
+    keyboard.esc = false
+    keyboard[27] = false
+
 
     //  Variabler
 
@@ -33,9 +37,14 @@
         //  Gamestate är en variabel som styr vilken del av spelet vi är i, en siffra för en sida (ex. menu, pause, the game, osv...)
     gamestate = 0
 
+    menustate = {main: 0, setting:1, inner: {col: 0, row:0}}
+
+
+
         //  This is a variable used for temporary counting för ready set go innan spelet börjar
     counter = 0
 
+    let menuY
 
 
     settings = {    gamemode: 0,
@@ -45,8 +54,8 @@
                     pixelS: 30,              //  PixelSize (dimentionerna för varje ruta i spelet)
                     pKeys: [
                                 { rotate: 38, left: 37, down: 40, right: 39, funk: 16},      //  Pilknapparna + funk: shift
-                                { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },      //  w, a, s och d
-                                { rotate: 85, left: 72, down: 74, right: 75, funk: 73 }       //  u, h, j och k
+                                { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },      //  w, a, s, d och e
+                                { rotate: 85, left: 72, down: 74, right: 75, funk: 73 }       //  u, h, j, k och i
                            ]
                }
 
@@ -250,7 +259,7 @@
                                 doCrapRows(p, delRows)
                             }
                         }
-                        if(keyboard[players[this.players[plr]].keys.funk]){
+                        if(keyboard[players[this.players[plr]].keys.funk] && settings.gamemode == 0){
                             this.gamestate = 2
                         }
                     }
@@ -263,11 +272,21 @@
                     rectangle(this.x-1, this.y-1, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
                     text(this.x+115, this.y+100, 25, "Paused", "white")
                     text(this.x+28, this.y+200, 20, "Press your rotation", "white")
-                    text(this.x+90, this.y+235, 20, "key to play", "white")
+                    text(this.x+28, this.y+235, 20, "key to Continue", "white")
+
+                    text(this.x+28, this.y+300, 20, "Press down", "white")
+                    text(this.x+28, this.y+335, 20, "to Restart", "white")
 
                     for(key = 0; key < this.players.length; key++){
                             if(keyboard[players[this.players[key]].keys.rotate]){
+                                    //  Trycker man rotate så går vi tillbaka till spelet genom countdown
                                 this.gamestate = 3
+                            }
+
+                            if(keyboard[players[this.players[key]].keys.down]){
+                                    //  Om man trycker ned så startar vi om spelet direkt
+                                this.reNew()
+                                this.gamestate = 1
                             }
                         }
 
@@ -758,6 +777,38 @@
     //  Functioner
     //  -----------------------------------------------------------------------------
 
+            //  Funktion som centrerar text perfekt
+            //  Så jag frågade min lillebror hur man skulle kunna göra för att centrera text.
+            //  Efter lite Googlande så hittade han ett sätt och skrev kod för att göra det.
+            //  Som jag har förstått det hämtar vi canvas elementet och säger att vi vill arbeta i 2D, eftersom vår canvas är i 2D redan.
+            //  Sedam sparar vi ned den alignment på texten som vi har (alltså till vänster)
+            //  Sedan sätter vi text align till center alltså att texten ska skrivas ut så att texten centreras
+            //  Vi skriver ut den text vi vill med text-funktionen koda.nu gjort till oss
+            //  Och ändrar tillbaka textAlign tilldefault 
+    function centerText(x, y, size, content, color) {
+        ctx = canvas.getContext("2d")
+        tempAlign = ctx.textAlign
+        ctx.textAlign = "center"
+        text(x, y, size, content, color)
+        ctx.textAlign = tempAlign
+    }
+
+        //  Ritar en "knapp" efter argumenten. Ger den ingen funktionalitet, utan den ritas bara ut
+    function botton(x, y, width, content, textSize, ID, selected){
+
+        if(selected == ID){
+            rectangle(x-3, y-3, width+6, textSize+40+6, "red")
+            rectangle(x-2, y-2, width+4, textSize+40+4, "black")
+        }
+
+        rectangle(x, y, width, textSize+40, "white")
+        rectangle(x+1, y+1, width-2, textSize+40-2, "black")
+
+
+        centerText(x+width/2, y+textSize+17, textSize, content, "white")
+        
+    }
+
             //  Ersätter reDoMapArray() och lite annan kod i gamestate 1 och mer...
             //  skapar upp map:ar och players efter settings
     function prepareGame() {
@@ -963,23 +1014,97 @@
                 //  Spel meny med enkla instruktioner för att kunna spela spelet
             case 0:
 
+                menuX = totalWidth/2-150
+
+                text(menuX, totalHeight/2-250, 100, "2", "white");
+                text(menuX+60, totalHeight/2-250, 80, "T", "#ffff00");
+                text(menuX+100, totalHeight/2-250, 80, "E", "red");
+                text(menuX+140, totalHeight/2-250, 80, "T", "#ff7f00");
+                text(menuX+180, totalHeight/2-250, 80, "R", "#0000ff");
+                text(menuX+210, totalHeight/2-250, 80, "I", "#00ffff");
+                text(menuX+240, totalHeight/2-250, 80, "S", "#00ff00");
+
+                if(counter <= Date.now()-100){
+                    switch(menustate.main){
+                            //  Play vald
+                        case 0:
+                            menuY = totalHeight/2-145
+                            
+                            if(keyboard.down || keyboard.s){
+                                menustate.main++
+                                counter = Date.now()
+
+                            } else if(keyboard.enter){
+                                gamestate = 1
+                                counter = 0
+                            }
+    
+                        break
+                            //  Instruktioner vald
+                        case 1:
+                            menuY = totalHeight/2-33
+                            
+                            if(keyboard.down || keyboard.s){
+                                menustate.main++
+                                counter = Date.now()
+    
+                            } else if(keyboard.up || keyboard.w){
+                                menustate.main--
+                                counter = Date.now()
+    
+                            } else if(keyboard.enter){
+                                gamestate = 6
+                                counter = Date.now()
+    
+                            }
+    
+                        break
+                            //  Settings vald
+                        case 2:
+                            menuY = totalHeight/2+88
+                            
+                            if(keyboard.up || keyboard.w){
+                                menustate.main--
+                                counter = Date.now()
+    
+                            } else if(keyboard.enter){
+                                gamestate = 5
+                                counter = Date.now()
+                                menustate.setting = 1
+    
+                            }
+                            
+                        break
+                    }
+                }
+
+                rectangle(menuX-90, menuY, 500, 100, "white")
+                rectangle(menuX-89, menuY+1, 500-2, 100-2, "black")
+
+                text(menuX+85, totalHeight/2-80, 45, "Play", "white")
+                text(menuX-30, totalHeight/2+30, 40, "Instructions", "red")
+                text(menuX+28, totalHeight/2+150, 40, "Settings", "#ffff00")
+
+
+
+
                         //  Jag har lagt text() funktionerna bredvid varandra så här eftersom det visar hur det ser ut när det skrivs ut på skrämen
                         //  Det blir lättare att se och redigera än om man skriver allt på nya rader.
                         //  Anledningen till att jag har semikolon (";") efter raderna till vänster är för att
                         //  jag inte skall få några eventuella syntaxproblem, eftersom jag skriver två olika saker på samma rad.
                         //  (Jag lade semikolon även på raden ovan och under för att det skall se mer regelbundet ut.)
-                text(totalWidth/2-240, totalHeight/2-200, 40, "Tetris The Game", "white");
-                text(totalWidth/2-440, totalHeight/2-100, 20, "W --> Rotate current figure");  text(totalWidth/2+100, totalHeight/2-100, 20, "The goal is to stay alive as long")
-                text(totalWidth/2-440, totalHeight/2-70, 20, "A --> Move left");        text(totalWidth/2+100, totalHeight/2-60, 20, "as posible by removing rows. A Row")
-                text(totalWidth/2-440, totalHeight/2-40, 20, "D --> Move right");       text(totalWidth/2+100, totalHeight/2-20, 20, "gets removed when there are no")
-                text(totalWidth/2-440, totalHeight/2-10, 20, "S --> Move Down one step");text(totalWidth/2+100, totalHeight/2+20, 20, "gaps in it. When the figures piles up")
-                text(totalWidth/2-440, totalHeight/2+60, 20, "P --> Pause");            text(totalWidth/2+100, totalHeight/2+60, 20, "to the top, it's game over.")
-                text(totalWidth/2-170, totalHeight/2+150, 20, "Press Enter to start!");
+                // text(totalWidth/2-240, totalHeight/2-200, 40, "Tetris The Game", "white");
+                // text(totalWidth/2-440, totalHeight/2-100, 20, "W --> Rotate current figure");  text(totalWidth/2+100, totalHeight/2-100, 20, "The goal is to stay alive as long")
+                // text(totalWidth/2-440, totalHeight/2-70, 20, "A --> Move left");        text(totalWidth/2+100, totalHeight/2-60, 20, "as posible by removing rows. A Row")
+                // text(totalWidth/2-440, totalHeight/2-40, 20, "D --> Move right");       text(totalWidth/2+100, totalHeight/2-20, 20, "gets removed when there are no")
+                // text(totalWidth/2-440, totalHeight/2-10, 20, "S --> Move Down one step");text(totalWidth/2+100, totalHeight/2+20, 20, "gaps in it. When the figures piles up")
+                // text(totalWidth/2-440, totalHeight/2+60, 20, "P --> Pause");            text(totalWidth/2+100, totalHeight/2+60, 20, "to the top, it's game over.")
+                // text(totalWidth/2-170, totalHeight/2+150, 20, "Press Enter to start!");
 
-                    //  När man trycker på space sätter vi counter till 0 (den används för att animationen innan spelet börjar skall fungera)
-                if(keyboard.enter) {
-                    gamestate = 1
-                }
+                //     //  När man trycker på space sätter vi counter till 0 (den används för att animationen innan spelet börjar skall fungera)
+                // if(keyboard.enter) {
+                //     gamestate = 1
+                // }
 
             break
 
@@ -993,6 +1118,7 @@
 
                         //  Kort info om att hoppa över countdownen
                 text(totalWidth/2-160, totalHeight/2+200, 15, '(Press "space" to skip)', "white")
+                text(50, 60, 30, "ESC", "white")
 
 
                         //  Countdown inför själva spelet.
@@ -1017,6 +1143,10 @@
                     text(totalWidth/2-150, totalHeight/2-30, 60, "Ready?", "white")
                 }
 
+                if(keyboard.esc){
+                    gamestate = 0
+                }
+
             break
 
 
@@ -1031,8 +1161,10 @@
                 //     //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
                 // drawGameOnly()
 
+                text(20, totalHeight-20, 20, "p --> Pause", "white")
+
                     //  En pause sida om man trycker på p
-                if(keyboard.p && settings.gamemode == 1) {
+                if(keyboard.p) {
                     gamestate = 4
                 }
 
@@ -1126,16 +1258,190 @@
                 text(totalWidth/2-40, totalHeight/2-50, 30, "to", "white")
                 text(totalWidth/2-200, totalHeight/2, 30, "continue playing", "white")
 
+                text(50, 60, 30, "ESC", "white")
+
                         //  Skickar dig en tillbaka till spelet
                 if(keyboard.space) {
                     gamestate = 2
+                } else if(keyboard.esc){
+                    gamestate = 0
                 }
 
             break
 
                 //  Settings
             case 5:
-                text(totalWidth/2-150, 100, 50, "Settings", "white")
+                
+                centerText(totalWidth/2, 70, 50, "Settings", "yellow")
+                text(50, 70, 30, "ESC", "white")
+                line(100, 130, totalWidth-100, 130, 1, "white")
+
+                switch(menustate.setting){
+                        //  amount of Players 
+                    case 1:
+                        rectangle(totalWidth/2-340, 85, 192, 45, "white")
+                        rectangle(totalWidth/2-339, 86, 190, 60, "black")
+
+                        text(150, 200, 30, "Amount of players: " + settings.playerCount, "white")
+                        // botton(x, y, width, text, textSize, state)
+                        if(counter <= Date.now()-100){
+
+                            if((keyboard.right || keyboard.d)){
+
+                                switch(menustate.inner.row){
+                                    case 0:
+                                        if(menustate.inner.col < 2){
+                                            menustate.inner.col++
+                                            counter = Date.now()
+                                        }
+                                    case 1:
+                                        if(menustate.inner.col < 1 && settings.playerCount != 1){
+                                            menustate.inner.col++
+                                            counter = Date.now()
+                                        }
+                                    break
+                                }
+                            }    
+
+                            if((keyboard.left || keyboard.a) && menustate.inner.col > 0){
+                                menustate.inner.col--
+                                counter = Date.now()
+                            }
+
+                            if((keyboard.up || keyboard.w) && menustate.inner.row > 0){
+                                menustate.inner.row--
+                                menustate.inner.col = 0
+                                counter = Date.now()
+                            }
+
+                            if((keyboard.down || keyboard.s) && menustate.inner.row < 1){
+                                menustate.inner.row++
+                                menustate.inner.col = 0
+                                counter = Date.now()
+                            }
+
+                            if(keyboard.enter){
+                                switch(menustate.inner.row){
+                                    case 0:
+                                        settings.playerCount = menustate.inner.col+1
+                                        if(settings.playerCount == 1){
+                                            settings.gamemode = 0    
+                                        }
+                                    break
+                                    case 1:
+                                        settings.gamemode = menustate.inner.col
+                                    break
+                                }
+                            }
+                        }
+
+                        botton(150, 250, 80, "1", 30, 0, menustate.inner.col + menustate.inner.row*10)
+                        botton(250, 250, 80, "2", 30, 1, menustate.inner.col + menustate.inner.row*10)
+                        botton(350, 250, 80, "3", 30, 2, menustate.inner.col + menustate.inner.row*10)
+
+                        gamemodeNames = ["Separate", "Versus"]
+
+                        text(150, 450, 30, "Gamemode: " + gamemodeNames[settings.gamemode], "white")
+
+                        botton(150, 500, 230, "Separate", 30, 10, menustate.inner.col + menustate.inner.row*10)
+                        if(settings.playerCount != 1){
+                            botton(400, 500, 180, "Versus", 30, 11, menustate.inner.col + menustate.inner.row*10)
+                        } else {
+                            text(400, 520, 20, "Versus Disabled!", "red")
+                            text(420, 550, 15, "Is not available while", "grey")
+                            text(420, 570, 15, "Amount of players = 1", "grey")
+                        }
+
+                        if(menustate.inner.row == 1 && menustate.inner.col == 0){
+                            text(totalWidth/2+50, 200, 25, "Separate gamemode", "white")
+                            text(totalWidth/2+50, 250, 15, "All the games are separate from each other;", "white")
+                            text(totalWidth/2+50, 280, 15, "They will not affect each other.", "white")
+                            text(totalWidth/2+50, 320, 15, "The Goal is to gain as many points as possible.", "white")
+                            line(totalWidth/2, 200, totalWidth/2, totalHeight-100)
+                            
+                        } else if(menustate.inner.row == 1 && menustate.inner.col == 1){
+                            text(totalWidth/2+50, 200, 25, "Versus gamemode", "white")
+                            text(totalWidth/2+50, 250, 15, "You play against each other;", "white")
+                            text(totalWidth/2+50, 280, 15, " When you delete rows, the other players", "white")
+                            text(totalWidth/2+50, 310, 15, " might get an extra bonus surprise... ;D", "white")
+                            text(totalWidth/2+50, 350, 15, " Also, when you level up, the other players'", "white")
+                            text(totalWidth/2+50, 380, 15, " fall speeds will increase; not yours", "white")
+                            text(totalWidth/2+50, 420, 15, " The Goal is to be the last survivor.", "white")
+                            line(totalWidth/2, 200, totalWidth/2, totalHeight-100)
+                        }
+
+                    break
+                        //  Keybinds
+                    case 2:
+                        rectangle(totalWidth/2-100, 85, 212, 45, "white")
+                        rectangle(totalWidth/2-99, 86, 210, 60, "black")
+
+                        gamemodeNames = ["Separate", "Versus"]
+                        
+                        text(150, 200, 30, "Gamemode: " + gamemodeNames[settings.gamemode], "white")
+
+                        if(counter <= Date.now()-100){
+                            if((keyboard.right || keyboard.d) && menustate.inner < 1){
+                                menustate.inner++
+                                counter = Date.now()
+                            } else if((keyboard.left || keyboard.a) && menustate.inner > 0){
+                                menustate.inner--
+                                counter = Date.now()
+                            } else if(keyboard.enter){
+                                settings.gamemode = menustate.inner
+                            }
+                        }
+
+                        botton(150, 250, 230, "Separate", 30, 0, menustate.inner)
+                        botton(400, 250, 180, "Versus", 30, 1, menustate.inner)
+
+                    break
+                        //  KeyBinds
+                    case 3:
+                        rectangle(totalWidth/2+150, 85, 192, 45, "white")
+                        rectangle(totalWidth/2+151, 86, 190, 60, "black")
+                }
+
+                centerText(totalWidth/2, 115, 20, "General(1)     KeyBinds(2)     Credit(3)", "white")
+                // text(400, 115, 20, "Gamemode(2)")
+                // text(650, 115, 20, "KeyBinds(3)")
+
+                if(counter <= Date.now()-100){
+                    if(keyboard.one){
+                        menustate.setting = 1
+                        menustate.inner.col = 0
+                        menustate.inner.row = 0
+
+                    } else if(keyboard.two){
+                        menustate.setting = 2
+                        menustate.inner.col = 0
+                        menustate.inner.row = 0
+
+                    } else if(keyboard.three){
+                        menustate.setting = 3
+                        menustate.inner.col = 0
+                        menustate.inner.row = 0
+
+                    } else if(keyboard.esc){
+                        gamestate = 0
+                        menustate.inner.col = 0
+                        menustate.inner.row = 0
+
+                    }
+                }
+            break
+
+                //  Instructions
+            case 6:
+                centerText(totalWidth/2, 100, 50, "Instructions", "red")
+                text(50, 70, 30, "ESC", "white")
+                line(100, 130, totalWidth-100, 130, 1, "white")
+                
+                if(counter <= Date.now()-100){
+                    if(keyboard.esc){
+                        gamestate = 0
+                    }
+                }
             break
         }
 
