@@ -52,13 +52,15 @@
                     mapW: 10,               //  Map dimentions 10x20 default
                     mapH: 20,               //  Map dimentions
                     pixelS: 30,              //  PixelSize (dimentionerna för varje ruta i spelet)
-                    pKeys: [
-                                { rotate: 38, left: 37, down: 40, right: 39, funk: 16},      //  Pilknapparna + funk: shift
-                                { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },      //  w, a, s, d och e
-                                { rotate: 85, left: 72, down: 74, right: 75, funk: 73 }       //  u, h, j, k och i
-                           ]
+                    pKeys: []
                }
+    
+    defaultKeys = [
+                        { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },        //  w, a, s, d och e
+                        { rotate: 85, left: 72, down: 74, right: 75, funk: 73 },        //  u, h, j, k och i
+                        { rotate: 38, left: 37, down: 40, right: 39, funk: 16 }         //  Pilknapparna + funk: shift
 
+                  ]
 
 
 //////////////////////////////////////////////////
@@ -358,12 +360,17 @@
                             this.mapArray[abRow][col] = this.mapArray[abRow-1][col]
                         }
                     }
-
-                        //  Ökar antalet poäng med 100 (när en rad tagits bort)
-                    this.scoreUp(100)
                 }
             }
-                //  Returnerar hur många rader som blev borttagna
+
+                //  Ökar antalet poäng med 100 (när en rad tagits bort)
+                if(rowsDeleted >= 4){
+                    this.scoreUp(200)
+                }
+
+                this.scoreUp(100*rowsDeleted)
+
+            //  Returnerar hur många rader som blev borttagna
             return rowsDeleted
         }
 
@@ -581,34 +588,34 @@
 
                 //  MOVE LEFT
             if(keyboard[this.keys.left]) {
-                if(this.keyDownTime.a%4 == 0) {
+                if(this.keyDownTime.left%4 == 0) {
                     if(this.checkNext(2)){
                         this.x--
                     }
                 }
-                this.keyDownTime.a++
-            } else if(!keyboard.a){
-                this.keyDownTime.a = 0
+                this.keyDownTime.left++
+            } else if(!keyboard.left){
+                this.keyDownTime.left = 0
             }
         /////////////////////////////////////
 
                     //  MOVE RIGHT
             if(keyboard[this.keys.right]) {
-                if(this.keyDownTime.d%4 == 0) {
+                if(this.keyDownTime.right%4 == 0) {
                     if(this.checkNext(1)){
                         this.x++
                     }
                 }
 
-                this.keyDownTime.d++
-            } else if(!keyboard.d){
-                this.keyDownTime.d = 0
+                this.keyDownTime.right++
+            } else if(!keyboard.right){
+                this.keyDownTime.right = 0
             }
         /////////////////////////////////////
 
                     //  MOVE DOWN
             if(keyboard[this.keys.down]) {
-                if(this.keyDownTime.s%4 == 0) {
+                if(this.keyDownTime.down%4 == 0) {
                     if(this.checkNext(0)){
                         this.y++
                     } else {
@@ -617,23 +624,23 @@
                     }
                 }
 
-                this.keyDownTime.s++
-            } else if(!keyboard.s) {
-                this.keyDownTime.s = 0
+                this.keyDownTime.down++
+            } else if(!keyboard.down) {
+                this.keyDownTime.down = 0
             }
         /////////////////////////////////////
 
                     // ROTATE
             if(keyboard[this.keys.rotate]) {
-                if(this.keyDownTime.w%7 == 0){
+                if(this.keyDownTime.rotate%8 == 0){
                     if(this.checkNext(3)){
                         this.shape = this.rotate()
                     }
                 }
-                this.keyDownTime.w++
+                this.keyDownTime.rotate++
 
-            } else if(!keyboard.w){
-                this.keyDownTime.w = 0
+            } else if(!keyboard.rotate){
+                this.keyDownTime.rotate = 0
             }
             /////////////////////////////////////
 
@@ -809,6 +816,41 @@
         
     }
 
+
+    function mapKeysToPlayers(){
+        tempKeys = defaultKeys
+
+        switch(settings.pKeys.length){
+            case 1:
+                tempKeys[2] = settings.pKeys[0]
+            break
+            case 2:
+                tempKeys[2] = settings.pKeys[1]
+                tempKeys[0] = settings.pKeys[0]
+            break
+            case 3:
+                tempKeys[2] = settings.pKeys[2]
+                tempKeys[0] = settings.pKeys[0]
+                tempKeys[1] = settings.pKeys[1]
+            break
+        }
+
+        switch(settings.playerCount){
+            case 1:
+                settings.pKeys[0] = tempKeys[2]
+            break
+            case 2:
+                settings.pKeys[1] = tempKeys[2]
+                settings.pKeys[0] = tempKeys[0]
+            break
+            case 3:
+                settings.pKeys[2] = tempKeys[2]
+                settings.pKeys[1] = tempKeys[1]
+                settings.pKeys[0] = tempKeys[0]
+            break
+        }
+    }
+
             //  Ersätter reDoMapArray() och lite annan kod i gamestate 1 och mer...
             //  skapar upp map:ar och players efter settings
     function prepareGame() {
@@ -825,7 +867,7 @@
         diming = 15
         yPos = -50
 
-
+        mapKeysToPlayers()
 
                 //  Senare: 5+5[antalplayers]   
             totalMapWidth = ((settings.mapW+2) * settings.pixelS) + settings.pixelS*4
@@ -975,6 +1017,10 @@
             crapMap = theMaps[player.map].lastCrapMap       //  Senaste map vi skräpat ned och den map vi nu kommer att börja med
             numOfP = players.length-1                       //  Antal spelare som finns
 
+                //  Om man gör en tetris får man skräpa motståndaren med en extra rad!
+            if(delRows == 4){
+                delRows = 5
+            }
                     //  Loopar över antalet rader som tagits bort
             for(rows = 0; rows < delRows; rows++){
 
@@ -1327,6 +1373,9 @@
                                         if(settings.playerCount == 1){
                                             settings.gamemode = 0    
                                         }
+
+                                        mapKeysToPlayers()
+
                                     break
                                     case 1:
                                         settings.gamemode = menustate.inner.col
