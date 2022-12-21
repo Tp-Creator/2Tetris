@@ -1,6 +1,5 @@
 <script src="https://koda.nu/simple.js">
-
-    //  Joel Jägerskogh - Tetris The Game
+    //  Joel Jägerskogh - 2Tetris
 
     /*
 
@@ -15,7 +14,10 @@
         Och jag tycker inte att det är så fel för att det blir mer proffsigt när man kommenterar på engelska.
         (Tycker dock inte att det är värt att ändra språk eftersom kommenteringen är till för att du som läser detta ska förstå vad koden gör.
 
-        Hoppas du finner glädje i att spela mitt spel!
+        Jag har inte hunit kommentera så mycket som jag skulle behövt... Men har försökt täcka många viktiga förändringar.
+        Speciellt settings blev dåligt täckt. Det jag gör är att hela tiden hålla koll på vad som är markerat och sedan utifrån det avgöra vilka knappar man kan trycka på för att få saker att hända.
+
+        Hoppas du trots detta lite halvfärdiga spel finner glädje i att spela det
 
     */
 
@@ -37,6 +39,7 @@
         //  Gamestate är en variabel som styr vilken del av spelet vi är i, en siffra för en sida (ex. menu, pause, the game, osv...)
     gamestate = 0
 
+        //  En variabel gjord för att hålla koll på var man är i menyerna och inställningarna se gamestate 0 och 5. Hade kunnat göras på bättre sätt men detta fungerar fint också.
     menustate = {main: 0, setting:1, inner: {col: 0, row:0}}
 
 
@@ -44,9 +47,11 @@
         //  This is a variable used for temporary counting för ready set go innan spelet börjar
     counter = 0
 
+        //  En variabel som används i gamestate 0 för att flytta på selectorn (skulle satt ihop den med menustate, men hann inte)
     let menuY
 
 
+        //  Objekt med alla inställningar
     settings = {    gamemode: 0,
                     playerCount: 1,
                     mapW: 10,               //  Map dimentions 10x20 default
@@ -55,6 +60,7 @@
                     pKeys: []
                }
     
+        //  Lista med default keys för de första tre spelarna. För att om man vill mappa om tangenterna ska man kunna återställa och så vidare... (hann inte få key bindings att fungera)
     defaultKeys = [
                         { rotate: 87, left: 65, down: 83, right: 68, funk: 69 },        //  w, a, s, d och e
                         { rotate: 85, left: 72, down: 74, right: 75, funk: 73 },        //  u, h, j, k och i
@@ -144,6 +150,8 @@
     /*  Konstruktorn Map
     
         Denna konstruktor skapa upp en hel spelplan utan players. Den innehåller metoder för att hantera sitt koordinautsystem och rita ut sig själv. Kolla rader, och håller sina egna poäng
+        Hanterar helt enkelt allt som har med en specifik map att göra.
+        Den uppdaterar även sina egna players 
 
     */
 
@@ -201,6 +209,7 @@
             }
         }
 
+            //  Loopar över alla spelare i map:en och ritar ut dem på rätt plats
         this.drawPlayers = function(){
             for(plr = 0; plr < this.players.length; plr++){
                 p = players[this.players[plr]]
@@ -208,8 +217,9 @@
             }
         }
 
+            //  Updaterar hela map:en och dess bitar efter vilket gamestate vi är i
         this.update = function(){
-                //  Draws the map
+                //  Draws the map och scoreboarden
             this.draw()
             this.drawScoreboard()
 
@@ -217,9 +227,12 @@
 
                     //  Gameover
                 case 0:
+                        //  Ritar ut alla players och lägger en genomskinlig svart bakrgrund ovanpå och ger allternativ för spelaren beroende på gamemode
                     this.drawPlayers()
                     rectangle(this.x-1, this.y-1, this.width+settings.pixelS*4+1, this.height+1, "#000000D9")
                     text(this.x+100, this.y+100, 25, "Gameover", "white")
+
+                        //  Separate, man kan få köra om precis som man vill
                     if(settings.gamemode == 0){
                     text(this.x+28, this.y+200, 20, "Press your rotation", "white")
                     text(this.x+90, this.y+235, 20, "key to play", "white")
@@ -231,6 +244,7 @@
                             }
                         }
 
+                            //  Versus alla spelare måste vänta på varandra
                     } else if (settings.gamemode == 1){
                         text(this.x+80, this.y+200, 20, "Wait until the", "white")
                         text(this.x+90, this.y+235, 20, "Game is over", "white")
@@ -260,6 +274,7 @@
                                 doCrapRows(p, delRows)
                             }
                         }
+                            // När vi kör separate gamemode kan man få använda pause och det vi gör här är att kolla om några av spelarna i map:en trycker på sin funktion key. Då hamnar map:en i Pause
                         if(keyboard[players[this.players[plr]].keys.funk] && settings.gamemode == 0){
                             this.gamestate = 2
                         }
@@ -361,12 +376,12 @@
                     }
                 }
             }
-
-                //  Ökar antalet poäng med 100 (när en rad tagits bort)
+                    //  Om spelaren gjort en tetris, dela ut 200 extra poäng
                 if(rowsDeleted >= 4){
                     this.scoreUp(200)
                 }
-
+            
+                    //  Ökar antalet poäng med 100 (när en rad tagits bort)
                 this.scoreUp(100*rowsDeleted)
 
             //  Returnerar hur många rader som blev borttagna
@@ -392,12 +407,13 @@
                 //  Ersätter global drawScoreBoard()
                 //  Denna funktion ritar ut rutan med poäng medan man spelar
         this.drawScoreboard = function() {
-                //this.x                     Mappens vänstersida
-                //15                        En distans från mappen till scoreboarden.
+            
+                //  Vi har dessa variabler som är beroende av pixelsize för att kunna skala om map:arna och låta scoreboarden göra detsamma
             posX = this.x + this.width + settings.pixelS/2
-            fontS = settings.pixelS/2
-            margin = settings.pixelS/3
-            lineBr = settings.pixelS/6*5
+            fontS = settings.pixelS/2                       //  Fontsize för scoreboarden
+            margin = settings.pixelS/3                      //  Marginaler för olika saker i scoreboarden
+            lineBr = settings.pixelS/6*5                    //  Hur stor en linebreak är i scoreboraden
+
 
             posY = this.y                               //   Höjden på mappen, scoreboarden blir då i höjd med mappen
             w = settings.pixelS*3.5                     //   Bredden på rutan
@@ -420,14 +436,17 @@
                 text(posX+margin, posY+lineBr*8, fontS, floor(this.data.fallDelay), "white")
         }
 
-                //  
+                //  Funktion för att kolla om det är dags att flytta ned alla spelare och gör isåfall det.
+                //  Vi använder oss av Date.now() som ger oss tiden i millisekunder sedan 1980 eller ngt, och sedan jämför vi med en tid vi satt att då ska vi flytta ned biten.
         this.fallPlayers = function(){
                 //  Kontrollerar om det har gått en "tick" i ngn av map:arna och flyttar isåfall ned alla bitarna i den map:en
             if(this.nextFall <= Date.now()) {
+                    //  Loopar över alla spelare
                 for(i = 0; i < this.players.length; i++) {
-                
+                        //  Förkortar playerns "address"
                     p = players[this.players[i]]
 
+                        //  Kollar om vi kan flytta ned och gör isåfall det
                     if(p.checkNext(0)) {
                         p.y++
     
@@ -437,12 +456,12 @@
                     }
                     
                 }
-
+                        //  Sätter nästa fall till tiden nu + hur lång fall delay vi har i map:en
                 this.nextFall = Date.now() + this.data.fallDelay
             }
         }
 
-
+            //  Ändrar fall delayn när den anropas
         this.setFallDelay = function(ms){
             this.data.fallDelay = ms
         }
@@ -516,7 +535,7 @@
             this.lastCrapMap = last
         }
 
-
+                //  Clearar den här map:en från bitar och återställer alla spelare i den. En omstart helt enkelt
         this.reNew = function(){
             this.data = {pts: 0, lvl: 1, fallDelay: 1000}                   //  Data för mapen innehåller poäng, level, och fallspeed på bitarna
             this.nextFall = Date.now() + this.data.fallDelay                //  Håller tidpunkten för nästa fall av bitarna i map:en
@@ -531,9 +550,8 @@
 
     /*  Kontstruktorn Player:
 
-        Detta är konstruktorn som skapar själva spelet. Den används för att skapa en bit som har koll på sig själv,
-        utifrån de globala variablerna. Den ritar ut sig själv, uppdaterar sin position och håller koll på var den är i koordinautsystemet "mapArray".
-        Den har funktioner för att rotera sig själv, flytta sig i olika riktningar och göra det på ett kontrollerat sätt (Reglering för hur det går att flytta och rotera bitarna)
+        Player motsvarar förra versionen av Figure och håller nu koll på fler saker än innan nämligen vilka keys som den använder sig av. detta göra att vi inte skapar ett helt nytt objekt när vi vill ha en ny bit
+        Utan vi ändrar bara på variablerna här i så att vi får en ny bit. 
 
     */
 
@@ -547,7 +565,7 @@
         
         this.keys = keys                         // this.keys = { down: 83, left: 65, right: 68, rotate: 87 }   //  ASCII för S, A, D och W. Detta gör att vi kan skicka in till spelaren vilka keys den ska läsa av
         
-        
+                //  Funktion för att skapa en ny figur
         this.newFigure = function() {
             tempFig = allShapes[ random(0, allShapes.length-1) ]            //  Slumpar ut en ny shape
     
@@ -560,6 +578,7 @@
 
             this.y = 1                                              //  Figurens y koordinaut, börjar på 1 vilket är nästan längst upp
         }
+
 
         this.newFigure()
 
@@ -729,7 +748,9 @@
 
         }
         
-            //  Ersätter newFigure() och en bit av updateFigures 
+            //  Ersätter newFigure() och en bit av updateFigures
+            //  Skriver in den gamla figuren i den egna map:en och skapar sedan en ny figur.
+            //  Ger poäng om den nya figuren in spawnats i en redan existerande bit och säger till map:en att kontrollera rader
         this.reNew = function() {
 
             ////////// fullbordar biten och kollar efter hela rader //////////
@@ -799,7 +820,11 @@
         ctx.textAlign = tempAlign
     }
 
+
         //  Ritar en "knapp" efter argumenten. Ger den ingen funktionalitet, utan den ritas bara ut
+        //  Om Ritar basically två eller fyta rektanglar så att det ser ut som en eller två ramar
+        //  Och skriver sedan in content innuti
+        //  Om ID == selceted kommer vi att rita en röd ram runt knappen för att visa att den är markerad (alltså vald)
     function botton(x, y, width, content, textSize, ID, selected){
 
         if(selected == ID){
@@ -816,6 +841,14 @@
     }
 
 
+            //  Funktion som just nu bara delar ut rätt tangenter till rätt spelare
+            //  Den var även tänkt att hålla koll på egna keybinds när man byter spelare men jag hann inte så långt.
+            //  Det vi gör här är att ta våra default keys som är ordnade efter vänster till höger på spelplanen.
+            //  Sedan kollar vi om vi redan har några existerande bindings som en player eventuellet har gjort (som då ligger i settings.pKeys)
+            //  Och sätter tempKeys till detta. (vi mergar på så vis ihop default keys med redan satta keys och låter de redan satta vara prioriterade)
+            //  Sedan loopar vi över hur många spelare vi har och sätter utifrån det de nya keys:en
+            //  i defaultKeys har vi satt att sista elementet är pilknapparna. I enspelarläget vill vi då att den enda spelaren ska ha de knapparna
+            //  Vi får det här problemet eftersom vi vill prioritera olika knappar vid olika många spelare och samtidigt vill ha specifika keys för specifika map:ar så att den map:en längst till vänster får de vänstraste keys:en osv...
     function mapKeysToPlayers(){
         tempKeys = defaultKeys
 
@@ -864,15 +897,35 @@
             //  array där ordningen de förlorar skrivs in
         result = []
 
-            //  Gameover screen     -- Variabler föratt dimma skrämen och animera text
-        diming = 15
-        yPos = -50
+            //  Gameover screen     -- Variabel för att animera text i gameover reset:as och skapas
+        yPos = -50      // Texten börjar utanför skärmen
 
         mapKeysToPlayers()
 
-                //  Senare: 5+5[antalplayers]   
-            totalMapWidth = ((settings.mapW+2) * settings.pixelS) + settings.pixelS*4
-            emptySpaceBetween = (totalWidth - totalMapWidth * settings.playerCount) / (settings.playerCount+1)
+                //  Senare: 5+5[antalplayers]     (Om vi skulle göra co-op maps)
+
+
+                //  Sätter positionerna på mapen efter lite tänkande:
+                    // Formel för utrymme mellan boards:
+
+                    // mapWidth
+                    // howMany
+                    // totalWidth
+
+                    // (mapWidth + scoreBoardWidth) * howMany = minSpace
+
+                    // minSpace*pixelSize = spaceNeeded
+
+                    // totalWidth - spaceNeeded = spaceLeft
+
+                    // spaceLeft/howMany+1 = spaceBetween
+
+                    // posX1 = spaceBetween
+
+                    // posX2 = spaceBetween * 2 + mapWidth+scoreBoardWidth
+
+            totalMapWidth = ((settings.mapW+2) * settings.pixelS) + settings.pixelS*4       //  Mappens bredd
+            emptySpaceBetween = (totalWidth - totalMapWidth * settings.playerCount) / (settings.playerCount+1)      //  Tomrummet mellan maparna i flerspelare så att det blir jämt fördelat
 
         switch(settings.gamemode) {
                 //Ensamstående  -  (finns flera spelare)
@@ -889,12 +942,12 @@
 
                     playerIDs = i                                                       //  Vi kommer alltid att ha bara en spelare per bana i de här gamestaten
 
-                    theMaps[i] = new Map(xPos, yPos, [playerIDs], tempMapArray)                      //  Skapar en ny map
+                    theMaps[i] = new Map(xPos, yPos, [playerIDs], tempMapArray)                      //  Skapar en ny map med pos, vilken player som är i (bara en för att gamemodsen ser ut så. Den är i en lista för tanken är att det lätt ska gå att uppgradera till flera spelare per map.) och den nya mapArrayen till mapen
                 }
 
             break
 
-
+                //  Var till en tanke med co-op spel, men hann inte så långt...
             case 2:
 
             break
@@ -902,7 +955,7 @@
 
     }
 
-            //  Den här funktionen återställer arrayn som sparar alla bitar, utifrån map.width, map.height och map.pS
+            //  Den här funktionen skapar en array med arrayer i som sparar alla bitar. Bredd och höjd utifrån map.width och map.height
     function createMapArray(width, height){
 
         tempMapArray = []
@@ -926,7 +979,7 @@
     }
 
 
-            //  Ritar bara ut alla banor med en for-loop
+            //  Ritar bara ut alla map:ar och deras bitar utan att uppdatera dem. (Används bara i pause för alla spelare samtidigt)
     function drawGameOnly() {
             //  Loopar över alla spelplaner och skriver ut planerna samt deras scoreboards
         for(i = 0; i < theMaps.length; i++) {
@@ -942,9 +995,10 @@
 
 
         //  Ersätter nextFigure()
+        //  Uppdaterar spelet utifrån gamemodet som är satt.
     function updateGame() {
-                //  Ersätter delen i movingFigure.update() som flyttar ned biten efter en tick
-            gameovers = 0
+
+            gameovers = 0   //  Variabel som håller koll på antalet gameovers för att se om alla är ute, för då vill vi gå till riktig gameover respektive alla utom en gameover i Versus
         for(maps = 0; maps < theMaps.length; maps++) {
                     
             theMaps[maps].update()
@@ -959,6 +1013,7 @@
         if(settings.gamemode == 1 && gameovers >= theMaps.length-1){
             gamestate = 3   //  Gameover när alla utom en av spelarna är döda
 
+                //  Om vi är i gamemode 1 kommer alla map:ar utom den som vann att hamna i listan över gameover map:ar. Vi lägger in den sist för att kora den till vinnare.
             for(map = 0; map < theMaps.length; map++){
                 inResult = false
                 for(res = 0; res < result.length; res++){
@@ -973,6 +1028,7 @@
             }
         }
 
+            //  Om alla förlorat i separate skicka dem till gameover
         if(settings.gamemode == 0 && gameovers >= theMaps.length){
             gamestate = 3
         }
@@ -980,9 +1036,11 @@
     }
 
 
+            //  Funktion för att ändra fallspeed beroende på vilket gamemode vi kör
     function changeFallSpeeds(){
         switch(settings.gamemode){
 
+                //  Separate alla får fallspeeden som de själva förtjänat med sin level
             case 0:
                 for(i = 0; i < theMaps.length; i++){
                     lvl = theMaps[i].data.lvl-1
@@ -992,8 +1050,7 @@
 
             break
 
-                    //  Versus      ger fall speed till alla andra än en själv
-                //  Uppgradera med skräp rader till de andra för mer intense gameplay
+                    //  Versus      ger fall speed till alla andra än en själv och delar upp den jämt så att om jag alla map:ar påverkas av de andras levlar utom sin egen
             case 1:
                 for(var i = 0; i < theMaps.length; i++){
                     var lvl = 0
@@ -1004,7 +1061,7 @@
                             count++
                         }
                     }
-                    lvl = lvl/count
+                    lvl = lvl/count     //  Genomsnitts level
 
                     theMaps[i].setFallDelay(1000*0.9**lvl)
                 }
@@ -1012,6 +1069,7 @@
         }
     }
 
+            //  Funktion som loopar över map:ar och ger dem delRows antal skräp rader
     function doCrapRows(player, delRows){
 
         if(delRows > 1) {
@@ -1061,8 +1119,10 @@
                 //  Spel meny med enkla instruktioner för att kunna spela spelet
             case 0:
 
-                menuX = totalWidth/2-150
+                    //  Variabel för att alla bokstäver ska vara relativa till ett värde, man måste inte ändra alla värden när texten skall flyttas
+                menuX = totalWidth/2-160
 
+                    //  Snyggt skrivet 2Tetris
                 text(menuX, totalHeight/2-250, 100, "2", "white");
                 text(menuX+60, totalHeight/2-250, 80, "T", "#ffff00");
                 text(menuX+100, totalHeight/2-250, 80, "E", "red");
@@ -1071,16 +1131,21 @@
                 text(menuX+210, totalHeight/2-250, 80, "I", "#00ffff");
                 text(menuX+240, totalHeight/2-250, 80, "S", "#00ff00");
 
+                    //  En counter delay som gör att knapptryck inte går instant utan man måste vänta 100 millisekunder sedan senaste knapptrycket
                 if(counter <= Date.now()-100){
                     switch(menustate.main){
                             //  Play vald
                         case 0:
+                                //  Flytta rutan som markerar till viss position i y-led
                             menuY = totalHeight/2-145
                             
+                                //  De här sakerna går att göra när vi markerat den här rutan
+                                //  Flytta ned cursorn
                             if(keyboard.down || keyboard.s){
                                 menustate.main++
                                 counter = Date.now()
 
+                                    //  Trycka enter och starta spelet
                             } else if(keyboard.enter){
                                 gamestate = 1
                                 counter = 0
@@ -1089,16 +1154,21 @@
                         break
                             //  Instruktioner vald
                         case 1:
+                                //  Flytta rutan som markerar till viss position i y-led
                             menuY = totalHeight/2-33
                             
+                            //  De här sakerna går att göra när vi markerat den här rutan
+                                //  Flytta ned cursorn
                             if(keyboard.down || keyboard.s){
                                 menustate.main++
                                 counter = Date.now()
     
+                                //  Flytta upp cursorn
                             } else if(keyboard.up || keyboard.w){
                                 menustate.main--
                                 counter = Date.now()
     
+                                //  Trycka enter för att gå in i Instructions
                             } else if(keyboard.enter){
                                 gamestate = 6
                                 counter = Date.now()
@@ -1108,12 +1178,16 @@
                         break
                             //  Settings vald
                         case 2:
+                            //  Flytta rutan som markerar till viss position i y-led
                             menuY = totalHeight/2+88
                             
+                            //  De här sakerna går att göra när vi markerat den här rutan
+                                //  Flytta uppåt cursorn
                             if(keyboard.up || keyboard.w){
                                 menustate.main--
                                 counter = Date.now()
     
+                                //  Trycka enter för att gå in i Settings
                             } else if(keyboard.enter){
                                 gamestate = 5
                                 counter = Date.now()
@@ -1125,33 +1199,14 @@
                     }
                 }
 
-                rectangle(menuX-90, menuY, 500, 100, "white")
-                rectangle(menuX-89, menuY+1, 500-2, 100-2, "black")
+                        //Ritar cursor rutan för att visa vad som är markerat
+                rectangle(totalWidth/2-250, menuY, 500, 100, "white")
+                rectangle(totalWidth/2-249, menuY+1, 500-2, 100-2, "black")
 
-                text(menuX+85, totalHeight/2-80, 45, "Play", "white")
-                text(menuX-30, totalHeight/2+30, 40, "Instructions", "red")
-                text(menuX+28, totalHeight/2+150, 40, "Settings", "#ffff00")
-
-
-
-
-                        //  Jag har lagt text() funktionerna bredvid varandra så här eftersom det visar hur det ser ut när det skrivs ut på skrämen
-                        //  Det blir lättare att se och redigera än om man skriver allt på nya rader.
-                        //  Anledningen till att jag har semikolon (";") efter raderna till vänster är för att
-                        //  jag inte skall få några eventuella syntaxproblem, eftersom jag skriver två olika saker på samma rad.
-                        //  (Jag lade semikolon även på raden ovan och under för att det skall se mer regelbundet ut.)
-                // text(totalWidth/2-240, totalHeight/2-200, 40, "Tetris The Game", "white");
-                // text(totalWidth/2-440, totalHeight/2-100, 20, "W --> Rotate current figure");  text(totalWidth/2+100, totalHeight/2-100, 20, "The goal is to stay alive as long")
-                // text(totalWidth/2-440, totalHeight/2-70, 20, "A --> Move left");        text(totalWidth/2+100, totalHeight/2-60, 20, "as posible by removing rows. A Row")
-                // text(totalWidth/2-440, totalHeight/2-40, 20, "D --> Move right");       text(totalWidth/2+100, totalHeight/2-20, 20, "gets removed when there are no")
-                // text(totalWidth/2-440, totalHeight/2-10, 20, "S --> Move Down one step");text(totalWidth/2+100, totalHeight/2+20, 20, "gaps in it. When the figures piles up")
-                // text(totalWidth/2-440, totalHeight/2+60, 20, "P --> Pause");            text(totalWidth/2+100, totalHeight/2+60, 20, "to the top, it's game over.")
-                // text(totalWidth/2-170, totalHeight/2+150, 20, "Press Enter to start!");
-
-                //     //  När man trycker på space sätter vi counter till 0 (den används för att animationen innan spelet börjar skall fungera)
-                // if(keyboard.enter) {
-                //     gamestate = 1
-                // }
+                    //  Skriver ut de olika alternativen centrerat
+                centerText(totalWidth/2, totalHeight/2-80, 45, "Play", "white")
+                centerText(totalWidth/2, totalHeight/2+30, 40, "Instructions", "red")
+                centerText(totalWidth/2, totalHeight/2+150, 40, "Settings", "#ffff00")
 
             break
 
@@ -1165,7 +1220,8 @@
 
                         //  Kort info om att hoppa över countdownen
                 text(totalWidth/2-160, totalHeight/2+200, 15, '(Press "space" to skip)', "white")
-                text(50, 60, 30, "ESC", "white")
+                centerText(60, 40, 20, "ESC", "white")
+                centerText(60, 70, 15, "(Quit)", "white")
 
 
                         //  Countdown inför själva spelet.
@@ -1174,7 +1230,7 @@
                 if(counter/updatesPerSecond > 3 || keyboard.space) {
                     gamestate = 2
                     
-                        //  Förbereder genom att slumpa ut en ny bit och skapa upp map:ar
+                        //  Förbereder genom att skapa upp spelare med varsina bitar och skapa upp map:ar till spelarna
                     prepareGame()
 
                         //  Nollställer räknaren till nästa gång den skall visas
@@ -1208,10 +1264,11 @@
                 //     //  Ritar ut spelplanerna, deras scoreboards och de aktiva bitarna
                 // drawGameOnly()
 
+                    //  Skriver ut uppe till höger att man kan trycka ESC för att pausa
                 centerText(60, 40, 20, "ESC", "white")
                 centerText(60, 70, 15, "(Pause)", "white")
 
-                    //  En pause sida om man trycker på p
+                    //  En pause sida om man trycker på esc
                 if(keyboard.esc) {
                     gamestate = 4
                 }
@@ -1223,11 +1280,6 @@
 
                 //  Gameover        ////////////////////////////////////////////////////
             case 3:
-                
-                //  Tänker mig att man mörkar bort spelplanerna och sedan låter man all data komma in från höger och visa scores
-                //  Måste optimeras mycket mer
-
-
 
                 if(yPos < 100) {
                     yPos += 2
@@ -1240,14 +1292,6 @@
                 switch(settings.gamemode){
                         //  För ensamspel en spelare
                     case 0:
-
-
-
-                        // if(diming < 220) {
-                        //     diming += 2
-                        //     hexDim = diming.toString(16)            //  Omvandlar dimming till talbas 16 (hexadecimalt) för att kunna sätta in det i färgen senare
-                        // }
-
                         text(100, yPos, 50, "Game Over!", "white")
 
                         for(i = 0; i < theMaps.length; i++){
@@ -1272,10 +1316,7 @@
                         if(result.length >= 3){
                             text(100, 400, 20, "3rd:  player " + (result[result.length-3]+1) + "  |  Score: "+ theMaps[result[result.length-3]].data.pts, "white")
                         }
-                        
-                            // for(i = 0; i < result.length-1; i++){
-                            
-                        // }
+
                     break
                 }
 
@@ -1302,6 +1343,7 @@
 
                         //  Skriver ut text för var man är och vad man gör för att fortsätta spela
                 centerText(totalWidth/2, totalHeight/2-200, 60, "Paused", "white")
+            
                 text(totalWidth/2-230, totalHeight/2-100, 20, "[Space]", "green")
                 text(totalWidth/2-110, totalHeight/2-100, 20, "--> Continue playing", "white")
 
@@ -1311,6 +1353,7 @@
                         //  Skickar dig en tillbaka till spelet
                 if(keyboard.space) {
                     gamestate = 2
+                        //  Exit to menu
                 } else if(keyboard.q){
                     gamestate = 0
                 }
@@ -1320,18 +1363,25 @@
                 //  Settings
             case 5:
                 
+                    //  Ritar upp basic layout
                 centerText(totalWidth/2, 70, 50, "Settings", "yellow")
-                text(50, 70, 30, "ESC", "white")
+                centerText(60, 40, 20, "ESC", "white")
+                centerText(60, 70, 15, "(Quit)", "white")
                 line(100, 130, totalWidth-100, 130, 1, "white")
 
                 switch(menustate.setting){
-                        //  amount of Players 
+                        //  General 
                     case 1:
+                            //  Ritar ut en rectangel med vitakanter ovan på linjen för att visa att vi markerat General
                         rectangle(totalWidth/2-340, 85, 192, 45, "white")
                         rectangle(totalWidth/2-339, 86, 190, 60, "black")
 
+                            //  Skriver hur många spelar vi valt att spela med
                         text(150, 200, 30, "Amount of players: " + settings.playerCount, "white")
-                        // botton(x, y, width, text, textSize, state)
+
+                        //  På olika platser i settings får man trycka på olika knappar. Och när man trycker på enter så väljer man den saken
+                        //  Hinner inte kommentera bättre... :(
+
                         if(counter <= Date.now()-100){
 
                             if((keyboard.right || keyboard.d)){
@@ -1392,6 +1442,7 @@
                             }
                         }
 
+                            //  Ritar ut knappar med menustate.inner för att avgöra om man står på knappen eller ej
                         botton(150, 250, 80, "1", 30, 0, menustate.inner.col + menustate.inner.row*10)
                         botton(250, 250, 80, "2", 30, 1, menustate.inner.col + menustate.inner.row*10)
                         botton(350, 250, 80, "3", 30, 2, menustate.inner.col + menustate.inner.row*10)
@@ -1409,6 +1460,7 @@
                             text(420, 570, 15, "Amount of players = 1", "grey")
                         }
 
+                            //  Om man är på gamemodes dyker det även upp en förklaring till de olika
                         if(menustate.inner.row == 1 && menustate.inner.col == 0){
                             text(totalWidth/2+50, 200, 25, "Separate gamemode", "white")
                             text(totalWidth/2+50, 250, 15, "All the games are separate from each other;", "white")
@@ -1430,39 +1482,102 @@
                     break
                         //  Keybinds
                     case 2:
+
+                        //  Hade inte tid att slutföra detta...    
+
                         rectangle(totalWidth/2-100, 85, 212, 45, "white")
                         rectangle(totalWidth/2-99, 86, 210, 60, "black")
-
-                        gamemodeNames = ["Separate", "Versus"]
                         
-                        text(150, 200, 30, "Gamemode: " + gamemodeNames[settings.gamemode], "white")
+                        centerText(totalWidth/2, totalHeight/2-100, 30, "Comming soon...", "white")
 
-                        if(counter <= Date.now()-100){
-                            if((keyboard.right || keyboard.d) && menustate.inner < 1){
-                                menustate.inner++
-                                counter = Date.now()
-                            } else if((keyboard.left || keyboard.a) && menustate.inner > 0){
-                                menustate.inner--
-                                counter = Date.now()
-                            } else if(keyboard.enter){
-                                settings.gamemode = menustate.inner
-                            }
-                        }
+                        // centerText(350, 200, 20, "rotate", "white")
+                        // centerText(470, 200, 20, "left", "white")
+                        // centerText(590, 200, 20, "right", "white")
+                        // centerText(710, 200, 20, "down", "white")
+                        // centerText(880, 200, 20, "pause", "white")
 
-                        botton(150, 250, 230, "Separate", 30, 0, menustate.inner)
-                        botton(400, 250, 180, "Versus", 30, 1, menustate.inner)
+                        
+
+                        // for(i = 0; i < settings.playerCount; i++){
+                        //     text(100, 100*(i+1)+185, 20, "Player " + (i+1), "white")
+
+                        //     botton(300, 100*(i+1)+150, 100, keyboard.names[settings.pKeys[i].rotate] , 20, 0+i*10, menustate.inner.col + menustate.inner.row*10)
+                        //     botton(420, 100*(i+1)+150, 100, keyboard.names[settings.pKeys[i].left] , 20, 1+i*10, menustate.inner.col + menustate.inner.row*10)
+                        //     botton(540, 100*(i+1)+150, 100, keyboard.names[settings.pKeys[i].right] , 20, 2+i*10, menustate.inner.col + menustate.inner.row*10)
+                        //     botton(660, 100*(i+1)+150, 100, keyboard.names[settings.pKeys[i].down] , 20, 3+i*10, menustate.inner.col + menustate.inner.row*10)
+                        //     botton(830, 100*(i+1)+150, 100, keyboard.names[settings.pKeys[i].funk] , 20, 4+i*10, menustate.inner.col + menustate.inner.row*10)
+                            
+                        // }
+
+                        // text(1000, 285, 20, "(Left on the screen)", "grey")
+                        // text(1000, 485, 20, "(Right on the screen)", "grey")
+
+                        // if(counter <= Date.now()-100){
+
+                        //     if((keyboard.right || keyboard.d) && menustate.inner.col < 4){
+                        //         menustate.inner.col++
+                        //         counter = Date.now()
+                        //     }    
+
+                        //     if((keyboard.left || keyboard.a) && menustate.inner.col > 0){
+                        //         menustate.inner.col--
+                        //         counter = Date.now()
+                        //     }
+
+                        //     if((keyboard.up || keyboard.w) && menustate.inner.row > 0){
+                        //         menustate.inner.row--
+                        //         counter = Date.now()
+                        //     }
+
+                        //     if((keyboard.down || keyboard.s) && menustate.inner.row < 2){
+                        //         menustate.inner.row++
+                        //         counter = Date.now()
+                        //     }
+
+                        //     if(keyboard.enter){
+                        //         settings.playerCount = menustate.inner.col+1
+                        //         if(settings.playerCount == 1){
+                        //             settings.gamemode = 0    
+                        //         } 
+
+                        //         if(settings.playerCount >= 3){
+                        //             settings.pixelS = 25
+                        //         } else {
+                        //             settings.pixelS = 30
+                        //         }
+
+                        //         mapKeysToPlayers()
+                        //     }
+                        // }
+
+                        // if(counter <= Date.now()-100){
+                        //     if((keyboard.right || keyboard.d) && menustate.inner < 1){
+                        //         menustate.inner++
+                        //         counter = Date.now()
+                        //     } else if((keyboard.left || keyboard.a) && menustate.inner > 0){
+                        //         menustate.inner--
+                        //         counter = Date.now()
+                        //     } else if(keyboard.enter){
+                        //         settings.gamemode = menustate.inner
+                        //     }
+                        // }
 
                     break
-                        //  KeyBinds
+                        //  Credit
                     case 3:
+                            //  Ruta som visar att Credit är vald
                         rectangle(totalWidth/2+150, 85, 192, 45, "white")
                         rectangle(totalWidth/2+151, 86, 190, 60, "black")
+
+                        centerText(totalWidth/2, totalHeight/2-100, 50, "Not Me", "white")
                 }
 
                 centerText(totalWidth/2, 115, 20, "General(1)     KeyBinds(2)     Credit(3)", "white")
                 // text(400, 115, 20, "Gamemode(2)")
                 // text(650, 115, 20, "KeyBinds(3)")
 
+
+                    //  Loopar över alla siffertangener man kan trycka på och väljer på så vis vilken sida man ska gå till. Om man trycker på esc går man till menyn igen
                 if(counter <= Date.now()-100){
                     if(keyboard.one){
                         menustate.setting = 1
@@ -1473,6 +1588,7 @@
                         menustate.setting = 2
                         menustate.inner.col = 0
                         menustate.inner.row = 0
+                        mapKeysToPlayers()
 
                     } else if(keyboard.three){
                         menustate.setting = 3
@@ -1491,9 +1607,31 @@
                 //  Instructions
             case 6:
                 centerText(totalWidth/2, 100, 50, "Instructions", "red")
-                text(50, 70, 30, "ESC", "white")
+                centerText(60, 40, 20, "ESC", "white")
+                centerText(60, 70, 15, "(Quit)", "white")
                 line(100, 130, totalWidth-100, 130, 1, "white")
+
+                text(150, 200, 20, "The Goal of the game is the same as in the original Tetris;", "white")
+                text(150, 230, 20, "   Clear rows and get as many points as possible.", "white")
                 
+                text(150, 280, 20, "To steer your figures in 1 player:", "white")
+                text(150, 310, 20, "   The arrow keys and shift, to pause your map only", "white")
+                
+                text(150, 360, 20, "To steer your figures in 2 player:", "white")
+                text(150, 390, 20, "   The arrow keys and shift, to pause your map only", "white")
+                text(150, 420, 20, "   A, S, D, W and E, to pause your map only", "white")
+                
+                text(150, 470, 20, "To steer your figures in 3 player:", "white")
+                text(150, 500, 20, "   The arrow keys and shift, to pause your map only", "white")
+                text(150, 530, 20, "   A, S, D, W and E, to pause your map only", "white")
+                text(150, 560, 20, "   U, H, J, K and I, to pause your map only", "white")
+                
+                text(150, 610, 15, "OBS! Pausing your map is only available in seperate gamemode.", "red")
+                text(150, 630, 15, "   Otherwise use ESC, to pause the whole game", "red")
+                text(150, 660, 15, "   ESC is also used to quit most pages. If you see the ESC up in the corner, you can use it!", "red")
+                
+
+                    //  Esc för meny
                 if(counter <= Date.now()-100){
                     if(keyboard.esc){
                         gamestate = 0
